@@ -1,0 +1,495 @@
+"""
+Attributable heat stress children v. adults : Main script to extract climate signal 
+-------------------------------------------------------------------------------------------
+
+
+This script:
+
+- Calculates WBGT daily from daily tasmax, pressure and specific humidity
+- Calculates return period and return levels for a given percentile or absolute magnitude threshold defined in settings.py 
+    - Variables implemented: TX90, TX95, TX99, WBGT28, WBGT30, WBGT33, WBGT99
+    - Methods implemented: empirical percentiles (from 50 years in PI and 30 years in present), implemented for ISIMIP3b (models)
+                           shift fit with GMST as covariate, implemented for ISIMIP3a (obs)
+- Saves outputs as global gridded maps of p0, p1, and int_0, int_1 in pre-industrial and present day
+
+
+
+Data:
+
+- ISIMIP3a (reanalysis)
+- ISIMIP3b (bias-adjusted CMIP6 GCMs)
+
+
+
+Credits:
+
+- WBGT calculation: CDS_heat_stress_indicators (Schwingschackl 2021) 
+https://github.com/schwings-clemens/CDS_heat_stress_indicators
+- shift fit: dist_cov (Hauser 2017)
+https://github.com/mathause/dist_cov/tree/main
+
+
+
+
+Created June 2023, Last upadate May 2024
+rosa.pietroiusti@vub.be
+
+
+
+
+To do:
+~~~~~~~
+
+Population:
+- update input population data to ISIMIP3a - only goes to 2021, keep constant for 2022? after april: update with ISIMIP3b - done
+- update to new UN WPP data etc. - elsewhere in dem4cli
+- fix coastal pixels bug - try using countrymasks instead of regionmask w shapefile - done
+
+Climate: 
+- obs code and shift fit wrt GMST: implement global - done (try do on hist and outputting loglike for GOF and CI)
+- time-series: delete
+- use hist-nat (pool+empirical) and/or include all ISIMIP3b hist models - delete
+
+Exposure:
+- check my exposure calculations wrt my old function
+- country level / regional
+- pop distribution wrt emissions/vulnerability/GDP etc. 
+
+General:
+- clean up code, remove old functions I'm not using
+- possibly separate fxn files into different files and rename e.g. stats.py, exposure.py... ? or not? 
+
+
+
+"""
+
+import numpy as np
+import pandas as pd
+import os, glob, re 
+import math
+import xarray as xr
+import dask
+import netCDF4
+import time
+from datetime import timedelta, datetime
+
+
+# My settings and functions
+from settings import *
+from functions import *
+
+# do i need to import utils ?
+
+
+# maybe I only need these in functions??? TRY
+
+# heat stress package from Schwingshackl, 2021 (modified UTCI code - NOT USED UTCI IN THE END??)
+sys.path.append('../CDS_heat_stress_indicators/')
+import calc_heat_stress_indicators as hsi
+
+# dist_cov package from Hauser, 2017 (modified distributions.py to add non-stationary scale paramenter) 
+sys.path.append('../dist_cov/dist_cov/')
+import distributions_dev as distributions
+#import sample as sample - currently not using emcee
+import utils as utils 
+
+
+
+
+# ======================
+# Flags
+# for saving and running pieces of this script 
+# ======================
+
+
+
+flags_run = {}
+
+flags_run['save'] = True
+
+flags_run['hist'] = True # runs on hist+ssp370 
+
+flags_run['hist-nat'] = False     
+
+flags_run['calc-wbgt'] = False   # calculate the WBGT and save output in SCRATCH. 
+                                 # TODO: extend to additional hist models 
+
+flags_run['run-pi'] = True # if you already have it saved, dont re-run it
+
+
+# ======================
+# Main script
+# ======================
+
+
+
+if __name__ == '__main__':
+
+    
+    
+    # set up dask client
+    from dask.distributed import Client
+    client = Client() #threads_per_worker=1
+    print(datetime.now(), f'client initiated \n')
+
+    start_message()
+    
+    
+    
+    
+    
+    # ======================
+    # run ISIMIP3b models
+    # ======================
+
+    
+    if flags['models'] == 'ISIMIP3b':
+        print('running analysis for ISIMIP3b models')
+
+        
+        # loop over all models
+        for GCM in [GCMs[int(sys.argv[2])]]:   
+            print(datetime.now(), GCM)
+            tic = time.time()
+            
+            
+            # make/get path for saving output
+            outdir = make_outdir(GCM, makedirs=True)
+                     
+                
+                
+            # ======================
+            # historical models + ssp370
+            # ======================
+            
+            if flags_run['hist'] == True: 
+                print('running analysis for historical+ssp370 models')
+                
+                
+                
+                
+                
+                # ======================
+                # use the cmip data as input to calculate the wbgt
+                # ======================
+
+                if flags_run['calc-wbgt'] == True: 
+                    
+                    # calculates wbgt for each file (10 years) 
+                    # from tasmax, huss and ps and saves at daily resolution
+                    calc_wbgt(GCM, 
+                              scenario1='historical', 
+                              scenario2='ssp370', 
+                              chunk_version=flags['chunk_version'], 
+                              variables=VARs,
+                              startyear=None, # Not implemented. Does all years it finds in dir. 
+                              endyear=None,  
+                              save=True, # Note. saves in scratch all as 'historical' but actually its historical-ssp370
+                              overwrite=False,
+                              outdirname='output_sep24'
+                    )
+                    
+
+ 
+
+                    
+
+                
+                
+                # ==========================================================
+                # calculate p1, p0 and X0, X1 using empirical percentiles
+                # ==========================================================
+
+                if flags['method'] == 'empirical_percentile':
+                    
+                    
+                    if flags_run['run-pi']:
+                        # open PI data
+                        da_pi = open_model_data(GCM, 
+                                                period='pre-industrial', 
+                                                scenario1='historical', 
+                                                scenario2='ssp370')
+
+                        # Calculate what percentile it is in preindustrial
+                        data_pi_percentile = compute_quantile(da_pi, percentile) 
+                    
+                    else:
+                        # open pre-calculated PI thresholds
+                        filepath = glob.glob(os.path.join(outdirs,'output_empirical',metric, 'ISIMIP3b',GCM, 
+                                        f'*{metric}_pre-industrial_{start_pi}_{end_pi}.nc'))[0]  # TODO: CLEANUP this path/fxn/flags outdirs
+                        print('filepath pi', filepath)
+                        
+                        data_pi_percentile = xr.open_dataarray(filepath,  decode_times=False)
+                    
+                    
+                    
+                    
+                    # run for only one central year and take 30 year interval around that 
+                    if flags['time_method'] == 'single-year':
+                            
+                        # open time-window arrays with dask 
+                        da_pres = open_model_data(GCM, 
+                                                  period='target-year', 
+                                                  scenario1='historical', 
+                                                  scenario2='ssp370', 
+                                                  target_year=target_years, # target year in obs to match models to
+                                                  windowsize=30)
+
+                        # calc return level X1 in PD 
+                        # i.e. has same return period in present-day as 
+                        # reference percentile did in pre-industrial
+                        # e.g. to calculate delta I 
+                        da_return_level = compute_quantile(da_pres, percentile) 
+                        print(datetime.now(), f"computed return level corresponding to \
+                        {int(percentile*100)}th percentiles")
+
+                        # calculate present-day percentile 
+                        # of what was pi99 in pre-industrial (p1)
+                        # e.g. to calculate PR and nAHD
+                        # function calcs percentiles - TODO: check error from this
+                        da_return_period = calc_percentiles_da(da_pres, data_pi_percentile)
+                        
+                        print(datetime.now(), f"calculated present-day return period of \
+                        pre-industrial {metric}")
+                        
+                        
+                        ext = metric+'_'+flags['time_method']
+                    
+                    
+                    
+                    
+    
+                        
+                        
+                    if flags_run['save'] == True:
+                    
+                        if flags_run['run-pi']:
+                        
+                            filesavename = get_filesavename(GCM, 
+                                                            'historical',
+                                                            'ssp370', 
+                                                            ext=metric+'_pre-industrial', 
+                                                            data=data_pi_percentile, 
+                                                            startyear=start_pi, 
+                                                            endyear=end_pi)
+                            data_pi_percentile.to_netcdf(os.path.join(outdir, filesavename))
+                        
+                        filesavename = get_filesavename(GCM, 
+                                                        'historical',
+                                                        'ssp370', 
+                                                        ext+'_returnlevel', 
+                                                        data=da_return_level) 
+                        da_return_level.to_netcdf(os.path.join(outdir, filesavename))
+                        print(datetime.now(), 
+                              f"saved return level of {int(percentile*100)}th percentiles")
+                        
+                        filesavename = get_filesavename(GCM, 
+                                                        'historical',
+                                                        'ssp370', 
+                                                        ext+'_returnperiod', 
+                                                        data=da_return_period)
+                        da_return_period.to_netcdf(os.path.join(outdir, filesavename))
+                        print(datetime.now(), 
+                              f"saved return periods of pre-industrial {metric}")
+
+
+                        
+                        
+                        
+                # ==========================================================       
+                # empirical percentiles based on a fixed magnitude threshold
+                # ==========================================================
+
+                
+                elif flags['method'] == 'fixed_threshold':
+                    
+                    if flags_run['run-pi']:
+                    
+                        # open arrays for specified time windows
+                        da_pi = open_model_data(GCM, 
+                                                period='pre-industrial', 
+                                                scenario1='historical', 
+                                                scenario2='ssp370')
+                        
+                        da_return_period_pi = calc_percentiles_da(da_pi, fixed_threshold)
+                    
+                    if flags['time_method'] == 'single-year':
+                        
+                        da_pres = open_model_data(GCM, 
+                                                  period='target-year', 
+                                                  scenario1='historical', 
+                                                  scenario2='ssp370', 
+                                                  target_year=target_years, 
+                                                  windowsize=30)
+
+                        # calculate return period of fixed threshold (for PR/nAHD)
+                        da_return_period_pres = calc_percentiles_da(da_pres, fixed_threshold)
+  
+                        
+                        ext = metric+'_'+flags['time_method']
+                    
+                    
+                    if flags_run['save'] == True:
+                        
+                        
+                        if flags_run['run-pi']:
+                            
+                            filesavename = get_filesavename(GCM, 
+                                                            'historical',
+                                                            'ssp370', 
+                                                            ext=metric+'_pre-industrial_returnperiod', 
+                                                            data=da_return_period_pi, 
+                                                            startyear=start_pi, 
+                                                            endyear=end_pi)
+                            da_return_period_pi.to_netcdf(os.path.join(outdir, filesavename))
+                        
+                        filesavename = get_filesavename(GCM, 
+                                                        'historical',
+                                                        'ssp370', 
+                                                        ext+'_returnperiod', 
+                                                        data=da_return_period_pres)
+                        da_return_period_pres.to_netcdf(os.path.join(outdir, filesavename))
+                        
+                        
+                    
+ 
+                
+                
+                
+                
+                elif flags['method'] == 'shift_fit':
+                    
+                    
+                    pass
+                
+                
+                # TODO: develop this !! 
+
+        
+        
+     
+        
+        
+    
+        
+        
+    # ======================    
+    # observations ISIMIP3a
+    # ======================
+    
+    
+    elif flags['models'] == 'ISIMIP3a': 
+        print('running analysis for ISIMIP3a observations')
+
+        # loop over observational datasets
+        for dataset in [datasets[int(sys.argv[2])]]:  
+            print(datetime.now(), dataset)
+            tic = time.time()
+
+
+            # ==============================================================
+            # use the daily data as input to calculate the wbgt
+            # ==============================================================
+            
+            if flags_run['calc-wbgt'] == True: 
+                
+
+                # calculates wbgt for each file (10 years) of tasmax, huss and ps 
+                # and saves at daily resolution
+                calc_wbgt(dataset,
+                         scenario1=flags['experiment'],  #obsclim or counterclim
+                          scenario2=None, 
+                          chunk_version=flags['chunk_version'], 
+                          variables=VARs,
+                          startyear=None, # Not implemented. does all years 1850-2100
+                          endyear=None, 
+                          save=True,     # saves in SCRATCH, makes the dir by itself 
+                          overwrite=False,
+                          outdirname='output_apr24-9139513')
+                 
+
+
+
+
+
+
+            
+            # =========================
+            # run shift fit on obs data
+            # =========================
+            
+            
+            elif flags['method'] == 'shift_fit':
+                
+                print('running shift fit, global')
+                
+                # make or open output directory
+                outdir = make_outdir(dataset, makedirs=True) 
+                
+                # open data - HERE CHECK THIS OPENS TASMAX ! 
+                da = open_model_data(model=dataset, 
+                                    period='start-end', 
+                                    scenario1=flags['experiment'], 
+                                    scenario2=None, 
+                                    target_year=None, 
+                                    windowsize=None, 
+                                    chunk_version=flags['chunk_version'], #
+                                    variable=var,
+                                    startyear=flags['shift_period'][0],
+                                    endyear=flags['shift_period'][1],  
+                                   ) 
+                
+                # open and smooth covariate (GMST)
+                df_cov = pd.read_csv(observed_warming_path_annual
+                                    ).rename(columns={'timebound_lower':'year'}
+                                    ).set_index('year')[['gmst']]
+                df_cov_smo = pd.DataFrame(apply_lowess(df_cov, df_cov.index, ntime=4))
+                
+   
+                print('by month, only loc')
+#                 da_params = norm_shift_fit_boot(da, 
+#                                                 df_cov_smo, 
+#                                                 shift_sigma=flags['shift_sigma'], 
+#                                                 by_month=True, 
+#                                                 bootsize=1, 
+#                                                 alpha=0.05, 
+#                                                 seed=0, 
+#                                                 incl_mle=True) # delete this ! 
+
+                # output log-likelihood of model for CI calculation and goodness of fit 
+                if not flags['shift_loglike']:
+                    da_params = norm_shift_fit(da,
+                                               df_cov_smo, 
+                                               shift_sigma=flags['shift_sigma'], 
+                                               by_month=True)
+                    ext = metric+'_params_shift_loc_mon'
+                else:
+                    da_params = norm_shift_fit_loglike(da,
+                                               df_cov_smo, 
+                                               shift_sigma=flags['shift_sigma'], 
+                                               by_month=True)                
+        
+                    ext = metric+'_params_shift_loc_mon_loglike' # clean up old names !! 
+        
+                if flags_run['save'] == True:
+                    
+                    filesavename = get_filesavename(dataset, 
+                                                    'obsclim',
+                                                    None, 
+                                                    ext=ext, 
+                                                    keep_scenario=True,
+                                                    startyear=flags['shift_period'][0], 
+                                                    endyear=flags['shift_period'][1])  
+                    
+                    da_params.to_netcdf(os.path.join(outdir, filesavename))
+                    
+                    print(datetime.now(), f"saved params of shift fit")
+                
+
+
+        
+            
+            
+        toc = time.time()
+        print(f'{datetime.now()}, done, elapsed time: { (toc-tic) / 3600 } hours. \n')                    
+                        
