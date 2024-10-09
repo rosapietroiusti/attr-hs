@@ -15,13 +15,13 @@ from utils_ana import *
 
 def sample_from_monthly_pi_distributions(da_params,
                                          gmst_smo,
-                                         year_pres=2023,
-                                         GWI=1.3,
+                                         year_pres=2023, # check this w/ Clair
+                                         GWI=1.3, # and this w/ Clair 
                                          mc_samplesize=1000,
                                             ):
 
 
-    gmst_pres = float(gmst_smo.loc[year_pres]) # take smoothed or not smoothed covariate ?? 
+    gmst_pres = float(gmst_smo.loc[year_pres].iloc[0]) # take smoothed or not smoothed covariate ?? 
     gmst_pi = float(gmst_pres - GWI)
     
     b0 = da_params.sel(params='b0')
@@ -61,13 +61,13 @@ def sample_from_monthly_pi_distributions(da_params,
 
     return samples_pi
 
-def calc_nAHD_shift_fit_percentile_from_sample(da_params, 
-                                             percentile, 
-                                             gmst_smo,
+def calc_nAHD_shift_fit_percentile_from_sample(da_params,
+                                               percentile, 
+                                               gmst_smo,
                                                samples_pi,
-                                             year_pres=2023,
-                                             GWI=1.3,
-                                            ):
+                                               year_pres=2023,
+                                               GWI=1.2,
+                                              ):
 
     gmst_pres = float(gmst_smo.loc[year_pres]) # take smoothed or not smoothed covariate ?? 
 
@@ -78,15 +78,11 @@ def calc_nAHD_shift_fit_percentile_from_sample(da_params,
     if len(da_params.params) > 3:
         sigma_b0 = da_params.sel(params='sigma_b0')
         sigma_b1 = da_params.sel(params='sigma_b1')
-        mean_pi = b0 + b1 * gmst_pi
         mean_pres = b0 + b1 * gmst_pres
-        std_pi = sigma_b0 + sigma_b1 * gmst_pi
         std_pres = sigma_b0 + sigma_b1 * gmst_pres
     else:
         sigma_b0 = da_params.sel(params='sigma')
-        mean_pi = b0 + b1 * gmst_pi
         mean_pres = b0 + b1 * gmst_pres
-        std_pi = sigma_b0
         std_pres = sigma_b0
 
     # theoretical distributions per month in present for later 
@@ -122,15 +118,20 @@ def calc_nAHD_shift_fit_percentile_from_sample(da_params,
     return da_nAHD, da_nAHD_mo, da_threshold, da_p1
 
 
+
+
+
 def open_params_shiftfit(datasets,
-                         sigma=False):
+                         sigma=False,
+                        year_start=1901
+                        ):
     
     # open shift fit parameters 
     da_list = []
     for i in range(len(datasets)):
         dataset = datasets[i]
         if not sigma:
-            filepath = glob.glob(os.path.join(outdirs,f'output_shift-fit/forster2024/WBGT/ISIMIP3a/{dataset}/*_obsclim_WBGT_params_shift_loc_mon_loglike_1901_2019.nc'))[0]
+            filepath = glob.glob(os.path.join(outdirs,f'output_shift-fit/forster2024/WBGT/ISIMIP3a/{dataset}/*_obsclim_WBGT_params_shift_loc_mon_loglike_{str(year_start)}_2019.nc'))[0]
         da = xr.open_dataarray(filepath).expand_dims("dataset").assign_coords(dataset=("dataset", [dataset]))
         da_list.append(da)
         da_params = xr.concat(da_list, dim="dataset")
@@ -153,10 +154,11 @@ def get_smoothed_gmst(ntime=4):
 # Settings 
 flags['models']='ISIMIP3a'
 dirname = 'output_shift-fit' 
-outDIR=os.path.join(outdirs,f'output_shift-fit/forster2024/WBGT/ISIMIP3a/sample_pi/')
+GWI=1.3
+year_start=1950 # 1901 or 1950 
 
-
-
+# Set output directory 
+outDIR=os.path.join(outdirs,f'output_shift-fit/forster2024/WBGT/ISIMIP3a/sample_pi/GWI{str(GWI)}/')
 
 # Run sampling and percentile calculation 
 if __name__ == '__main__':
@@ -167,14 +169,14 @@ if __name__ == '__main__':
 
     start_message()
 
-    da_params = open_params_shiftfit(datasets)
+    da_params = open_params_shiftfit(datasets,year_start=year_start)
 
     gmst_smo = get_smoothed_gmst()
 
     sample_pi = sample_from_monthly_pi_distributions(da_params,
                                          gmst_smo,
                                          year_pres=2023,
-                                         GWI=1.3,
+                                         GWI=GWI,
                                          mc_samplesize=1000,
                                             )
 
@@ -184,15 +186,15 @@ if __name__ == '__main__':
                                              gmst_smo,
                                              sample_pi,)
 
-        # da_nAHD.to_netcdf(os.path.join(outDIR, f'nAHD_sample_pi_percentile_{str(percentile)}_shiftfit_loc_1901_2019.nc')
-        # da_nAHD_mo.to_netcdf(os.path.join(outDIR, f'nAHD_mo_sample_pi_percentile_{str(percentile)}_shiftfit_loc_1901_2019.nc')
-        # da_threshold.to_netcdf(os.path.join(outDIR, f'threshold_sample_pi_percentile_{str(percentile)}_shiftfit_loc_1901_2019.nc')
-        # da_p1.to_netcdf(os.path.join(outDIR, f'p1_sample_pi_percentile_{str(percentile)}_shiftfit_loc_1901_2019.nc')                                                                   
+        da_nAHD.to_netcdf(os.path.join(outDIR, f'nAHD_sample_pi_percentile_{str(percentile)}_shiftfit_loc_{str(year_start)}_2019_GWI{str(GWI)}.nc'))
+        da_nAHD_mo.to_netcdf(os.path.join(outDIR, f'nAHD_mo_sample_pi_percentile_{str(percentile)}_shiftfit_loc_{str(year_start)}_2019_GWI{str(GWI)}.nc'))
+        da_threshold.to_netcdf(os.path.join(outDIR, f'threshold_sample_pi_percentile_{str(percentile)}_shiftfit_loc_{str(year_start)}_2019_GWI{str(GWI)}.nc'))
+        da_p1.to_netcdf(os.path.join(outDIR, f'p1_sample_pi_percentile_{str(percentile)}_shiftfit_loc_{str(year_start)}_2019_GWI{str(GWI)}.nc'))                                                                   
         
-        pickle.dump(da_nAHD, open(os.path.join(outDIR, f'nAHD_sample_pi_percentile_{str(percentile)}_shiftfit_loc_1901_2019.pkl'), 'wb'))
-        pickle.dump(da_nAHD_mo, open(os.path.join(outDIR, f'nAHD_mo_sample_pi_percentile_{str(percentile)}_shiftfit_loc_1901_2019.pkl'), 'wb'))
-        pickle.dump(da_threshold, open(os.path.join(outDIR, f'threshold_sample_pi_percentile_{str(percentile)}_shiftfit_loc_1901_2019.pkl'), 'wb'))
-        pickle.dump(da_p1, open(os.path.join(outDIR, f'p1_sample_pi_percentile_{str(percentile)}_shiftfit_loc_1901_2019.pkl'), 'wb'))
+        # pickle.dump(da_nAHD, open(os.path.join(outDIR, f'nAHD_sample_pi_percentile_{str(percentile)}_shiftfit_loc_1901_2019.pkl'), 'wb'))
+        # pickle.dump(da_nAHD_mo, open(os.path.join(outDIR, f'nAHD_mo_sample_pi_percentile_{str(percentile)}_shiftfit_loc_1901_2019.pkl'), 'wb'))
+        # pickle.dump(da_threshold, open(os.path.join(outDIR, f'threshold_sample_pi_percentile_{str(percentile)}_shiftfit_loc_1901_2019.pkl'), 'wb'))
+        # pickle.dump(da_p1, open(os.path.join(outDIR, f'p1_sample_pi_percentile_{str(percentile)}_shiftfit_loc_1901_2019.pkl'), 'wb'))
         
 
 

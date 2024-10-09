@@ -2,23 +2,20 @@
 Attributable heat stress children v. adults : Main script to extract climate signal 
 -------------------------------------------------------------------------------------------
 
-
 This script:
 
 - Calculates WBGT daily from daily tasmax, pressure and specific humidity
 - Calculates return period and return levels for a given percentile or absolute magnitude threshold defined in settings.py 
     - Variables implemented: TX90, TX95, TX99, WBGT28, WBGT30, WBGT33, WBGT99
     - Methods implemented: empirical percentiles (from 50 years in PI and 30 years in present), implemented for ISIMIP3b (models)
-                           shift fit with GMST as covariate, implemented for ISIMIP3a (obs)
+                           shift fit with GMST as covariate, implemented for ISIMIP3a (reanalysis)
 - Saves outputs as global gridded maps of p0, p1, and int_0, int_1 in pre-industrial and present day
-
 
 
 Data:
 
 - ISIMIP3a (reanalysis)
 - ISIMIP3b (bias-adjusted CMIP6 GCMs)
-
 
 
 Credits:
@@ -29,36 +26,28 @@ https://github.com/schwings-clemens/CDS_heat_stress_indicators
 https://github.com/mathause/dist_cov/tree/main
 
 
-
-
 Created June 2023, Last upadate May 2024
 rosa.pietroiusti@vub.be
-
-
 
 
 To do:
 ~~~~~~~
 
-Population:
-- update input population data to ISIMIP3a - only goes to 2021, keep constant for 2022? after april: update with ISIMIP3b - done
-- update to new UN WPP data etc. - elsewhere in dem4cli
-- fix coastal pixels bug - try using countrymasks instead of regionmask w shapefile - done
-
 Climate: 
-- obs code and shift fit wrt GMST: implement global - done (try do on hist and outputting loglike for GOF and CI)
-- time-series: delete
-- use hist-nat (pool+empirical) and/or include all ISIMIP3b hist models - delete
+- obs code and shift fit wrt GMST: outputting loglike for GOF and CI 
+- run SF on tasmax 
+- time-series: delete, clean up code 
+- use hist-nat (pool+empirical) and/or include all ISIMIP3b hist models - delete, clean up code
 
 Exposure:
-- check my exposure calculations wrt my old function
+- cfr with my exposure calculations wrt my old function
 - country level / regional
 - pop distribution wrt emissions/vulnerability/GDP etc. 
 
 General:
 - clean up code, remove old functions I'm not using
-- possibly separate fxn files into different files and rename e.g. stats.py, exposure.py... ? or not? 
-
+- possibly separate fxn files into different files and rename e.g. attrib_climate.py, dem_exposure.py... ?
+- clean up take fxns also from newer nb files 
 
 
 """
@@ -109,7 +98,7 @@ flags_run['save'] = True
 
 flags_run['hist'] = True # runs on hist+ssp370 
 
-flags_run['hist-nat'] = False     
+flags_run['hist-nat'] = False    # del this later when i clean up (after review) 
 
 flags_run['calc-wbgt'] = False   # calculate the WBGT and save output in SCRATCH. 
                                  # TODO: extend to additional hist models 
