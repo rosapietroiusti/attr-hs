@@ -123,7 +123,8 @@ def calc_nAHD_shift_fit_percentile_from_sample(da_params,
 
 def open_params_shiftfit(datasets,
                          sigma=False,
-                        year_start=1901
+                        year_start=1901,
+                         var='WBGT'
                         ):
     
     # open shift fit parameters 
@@ -131,7 +132,7 @@ def open_params_shiftfit(datasets,
     for i in range(len(datasets)):
         dataset = datasets[i]
         if not sigma:
-            filepath = glob.glob(os.path.join(outdirs,f'output_shift-fit/forster2024/WBGT/ISIMIP3a/{dataset}/*_obsclim_WBGT_params_shift_loc_mon_loglike_{str(year_start)}_2019.nc'))[0]
+            filepath = glob.glob(os.path.join(outdirs,f'output_shift-fit/forster2024/{var}/ISIMIP3a/{dataset}/*_obsclim_{var}_params_shift_loc_mon_{str(year_start)}_2019.nc'))[0] # fix name of the WBGT params that are not loglike!! 
         da = xr.open_dataarray(filepath).expand_dims("dataset").assign_coords(dataset=("dataset", [dataset]))
         da_list.append(da)
         da_params = xr.concat(da_list, dim="dataset")
@@ -155,10 +156,11 @@ def get_smoothed_gmst(ntime=4):
 flags['models']='ISIMIP3a'
 dirname = 'output_shift-fit' 
 GWI=1.3
-year_start=1950 # 1901 or 1950 
+year_start=1901 # 1901 or 1950 
+var='TX'
 
 # Set output directory 
-outDIR=os.path.join(outdirs,f'output_shift-fit/forster2024/WBGT/ISIMIP3a/sample_pi/GWI{str(GWI)}/')
+outDIR=os.path.join(outdirs,f'output_shift-fit/forster2024/{var}/ISIMIP3a/sample_pi/GWI{str(GWI)}/')
 
 # Run sampling and percentile calculation 
 if __name__ == '__main__':
@@ -169,7 +171,7 @@ if __name__ == '__main__':
 
     start_message()
 
-    da_params = open_params_shiftfit(datasets,year_start=year_start)
+    da_params = open_params_shiftfit(datasets,year_start=year_start,var=var)
 
     gmst_smo = get_smoothed_gmst()
 
@@ -186,10 +188,10 @@ if __name__ == '__main__':
                                              gmst_smo,
                                              sample_pi,)
 
-        da_nAHD.to_netcdf(os.path.join(outDIR, f'nAHD_sample_pi_percentile_{str(percentile)}_shiftfit_loc_{str(year_start)}_2019_GWI{str(GWI)}.nc'))
-        da_nAHD_mo.to_netcdf(os.path.join(outDIR, f'nAHD_mo_sample_pi_percentile_{str(percentile)}_shiftfit_loc_{str(year_start)}_2019_GWI{str(GWI)}.nc'))
-        da_threshold.to_netcdf(os.path.join(outDIR, f'threshold_sample_pi_percentile_{str(percentile)}_shiftfit_loc_{str(year_start)}_2019_GWI{str(GWI)}.nc'))
-        da_p1.to_netcdf(os.path.join(outDIR, f'p1_sample_pi_percentile_{str(percentile)}_shiftfit_loc_{str(year_start)}_2019_GWI{str(GWI)}.nc'))                                                                   
+        da_nAHD.to_netcdf(os.path.join(outDIR, f'nAHD_{var}_sample_pi_percentile_{str(percentile)}_shiftfit_loc_{str(year_start)}_2019_GWI{str(GWI)}.nc'))
+        da_nAHD_mo.to_netcdf(os.path.join(outDIR, f'nAHD_mo_{var}_sample_pi_percentile_{str(percentile)}_shiftfit_loc_{str(year_start)}_2019_GWI{str(GWI)}.nc'))
+        da_threshold.to_netcdf(os.path.join(outDIR, f'threshold_{var}_sample_pi_percentile_{str(percentile)}_shiftfit_loc_{str(year_start)}_2019_GWI{str(GWI)}.nc'))
+        da_p1.to_netcdf(os.path.join(outDIR, f'p1_{var}_sample_pi_percentile_{str(percentile)}_shiftfit_loc_{str(year_start)}_2019_GWI{str(GWI)}.nc'))                                                                   
         
         # pickle.dump(da_nAHD, open(os.path.join(outDIR, f'nAHD_sample_pi_percentile_{str(percentile)}_shiftfit_loc_1901_2019.pkl'), 'wb'))
         # pickle.dump(da_nAHD_mo, open(os.path.join(outDIR, f'nAHD_mo_sample_pi_percentile_{str(percentile)}_shiftfit_loc_1901_2019.pkl'), 'wb'))

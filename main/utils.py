@@ -22,13 +22,13 @@ from settings import *
 # Utils - opening files etc
 # ---------------------------------------------------------------
 
-def make_outdir(GCM, scratchdir=False, makedirs=True, outdirname=None, experiment=None):
+def make_outdir(GCM, scratchdir=False, makedirs=True, outdirname=None, experiment=None, ver=ver):
     """ 
     set directory names of output directory when submitting jobs
-    standard name if unspecified will be in format e.g. 'output_jul23-JOBID' 
+    ver = JOBID with job submission
+    standard name if unspecified will be in format e.g. 'output_jul23-JOBID' or 'output_ju23' if not a job submission
     """
     
-    ver = sys.argv[1] # JOBID with job submission
     
     if '-f' in ver: # not job submit 
         ver = ''
@@ -280,10 +280,15 @@ def get_filesavename(GCM, scenario1, scenario2, ext, data=None, filepath=None,st
                         endyear=None
                     except:
                         try:
-                            startyear=target_years
-                            endyear=None 
+                            if target_years is not None:
+                                startyear=target_years
+                                endyear=None 
+                            elif target_temperature is not None:
+                                startyear=target_temperature
+                                endyear=None
                         except:
                             pass
+                            
         
     if keep_scenario == False:
         basename = os.path.basename(filepath)

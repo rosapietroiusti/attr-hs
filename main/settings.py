@@ -25,61 +25,62 @@ scratchdirs = os.path.join(os.environ['VSC_SCRATCH_VO_USER'],'attr-hw','output')
 
 flags = {}
 
-flags['models'] = 'ISIMIP3a'
+flags['models'] = 'ISIMIP3b'
                              # 'ISIMIP3b'
                              # 'ISIMIP3a' 
     
 
-flags['experiment'] = None # 
+flags['experiment'] = None #'obsclim' # 
                                 # obsclim
                                 # counterclim
                                 # None if ISIMIP3b
 
 
-flags['metric'] = 'TX' #['TX90', 'TX95', 'TX99'][int(sys.argv[3])]  
-                            # submit as job array e.g. ['WBGT90', 'WBGT95', 'WBGT99'][int(sys.argv[2])-1]
+flags['metric'] = ['WBGT28', 'WBGT30', 'WBGT33'][int(sys.argv[3])]  
+                            # submit as job array e.g. ['WBGT90', 'WBGT95', 'WBGT99'][int(sys.argv[3])]
                             # 'WBGT' : to calculate it or run shift_fit on full distribution
-                            # TX: developing - to run shift fit on it ! 
+                            # TX: to run shift fit 
                             # 'TX90', 'TX95', 'TX99' : to get return levels and periods
                             # 'WBGT90', 'WBGT95', 'WBGT99' 
                             # 'WBGT28', 'WBGT30', 'WBGT33'
 
                             
-flags['method'] = 'shift_fit'   
+flags['method'] = 'empirical_percentile'   
                             # calculate: to calculate WBGT 
                             # empirical_percentile: calculates return levels and periods with empirical percentiles
                             # fixed_threshold: empirical percentiles but based on a fixed magnitude threshold   - TODO:make this the same flag!! have it automatically recognized based on metric 
                             # shift_fit: fits non-stationary distribution per pixel based on dist_cov (Hauser et al)
 
-flags['time_method']=  None # 'single-year'
-                            # 'single-year' analysis on just one year (target year in obs models are matched to!)
-                            # None: if not running empirical percentiles or fixed threshold
+flags['time_method']=  'single-year' 
+                            # 'single-year' analysis on just one year or temperature level (target year in obs models are matched to!)
+                            # None: if running shift fit of WBGT-calc
                 
-flags['shift_sigma'] = False 
+flags['shift_sigma'] = None 
                             # True = one model per month, loc and scale both vary
                             # False = one model per month, only loc varies
                             # None: if not running shift fit 
 
-flags['shift_period'] = [(1901, 2019),(1950, 2019)][int(sys.argv[3])]  # [(1901, 2019),(1950, 2019)][int(sys.argv[3])] #[(1901, 2019),(1950, 2019)][int(sys.argv[2])-1]
+flags['shift_period'] = None #[(1901, 2019),(1950, 2019)][int(sys.argv[3])]  # [(1901, 2019),(1950, 2019)][int(sys.argv[3])] #[(1901, 2019),(1950, 2019)][int(sys.argv[2])-1]
                              # 1901, 2019
                              # 1950, 2019 
                              # None for emp percentiles or calc wbgt 
 
-flags['shift_loglike']=False
-                            # run the shift fit with this on true !!! for CIs !! 
+flags['shift_loglike']=None 
+                            # True / False : run the shift fit with this on true !!! for CIs !! 
 
             
-flags['chunk_version']=0     
+flags['chunk_version']=2     
                             # 0=specified dask chunks - best on Jup Nb (and for shift fit?)
                             # 1=auto dask chunks
                             # 2=no dask chunks - fastest on HPC for empirical percentiles
                             # all of them unchunk time 
                             # test time they take on shift fit! 
             
-target_years = 2023 #[2022,2023][int(sys.argv[3])]  
+target_years = None #2023 #[2022,2023][int(sys.argv[3])]  
                 # int e.g. 2022, 2023 - for empirical percentiles and fixed magnitude
-                # None: to calc WBGT or shift fit 
-            
+                # None: to calc WBGT or shift fit or target temp
+
+target_temperature = 1.5 # None
 
         
         
@@ -99,7 +100,8 @@ datadir = os.path.join('..', '..', 'data')
 observed_warming_path = os.path.join(datadir, 'gmst', 'gmst-obs/forster2024/decadal_averages.csv') #OLD: gmst-obs/forster2023/decadal_averages.csv
 observed_warming_path_annual = os.path.join(datadir, 'gmst', 'gmst-obs/forster2024/annual_averages.csv') #OLD: gmst-obs/forster2023/decadal_averages.csv
 
-
+# For saving with job submission 
+ver = sys.argv[1]
 
 
 #ISIMIP3b models 
@@ -108,12 +110,14 @@ indir_p = os.path.join(os.environ['VSC_DATA_VO'], 'data/dataset/ISIMIP/ISIMIP3b/
 indir_s = os.path.join(os.environ['VSC_DATA_VO'], 'data/dataset/ISIMIP/ISIMIP3b/SecondaryInputData/climate/atmosphere/bias-adjusted/global/daily/') # here there is historical of secondary models and hist-nat of all 6 models that have it
 
 #round 1
-#GCMs = ['CanESM5', 'CNRM-CM6-1', 'GFDL-ESM4', 'IPSL-CM6A-LR', 'MIROC6', 'MRI-ESM2-0'] # all the ISIMIP3b GCMs that have both hist and hist-nat (could extend to all hist models)
+#GCMs = ['CanESM5', 'CNRM-CM6-1', 'GFDL-ESM4', 'IPSL-CM6A-LR', 'MIROC6', 'MRI-ESM2-0'] # all the ISIMIP3b GCMs that have both hist and hist-nat 
 #round 2
-GCMs = ['EC-Earth3', 'UKESM1-0-LL', 'MPI-ESM1-2-HR', 'CNRM-ESM2-1'] # the remaining 4
+#GCMs = ['EC-Earth3', 'UKESM1-0-LL', 'MPI-ESM1-2-HR', 'CNRM-ESM2-1'] # the remaining 4 that dont have hist-nat
 
 GCMs_p = ['GFDL-ESM4', 'IPSL-CM6A-LR', 'MPI-ESM1-2-HR', 'MRI-ESM2-0', 'UKESM1-0-LL']
 GCMs_s = ['CanESM5', 'CNRM-CM6-1', 'CNRM-ESM2-1', 'EC-Earth3', 'MIROC6']
+
+GCMs = GCMs_p + GCMs_s
 
 dir_gmst_models = os.path.join(datadir, 'gmst', 'gmst-models-isimip3b')
     
@@ -176,7 +180,9 @@ elif '33' in flags['metric']:
     fixed_threshold = 33       
 elif '35' in flags['metric']:
     fixed_threshold = 35      
-    
+
+
+
    
 
 def start_message(): 

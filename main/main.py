@@ -79,7 +79,7 @@ import calc_heat_stress_indicators as hsi
 # dist_cov package from Hauser, 2017 (modified distributions.py to add non-stationary scale paramenter) 
 sys.path.append('../dist_cov/dist_cov/')
 import distributions_dev as distributions
-#import sample as sample - currently not using emcee
+#import sample as sample - currently not using emcee sampler for CI on params 
 import utils as utils 
 
 
@@ -103,7 +103,7 @@ flags_run['hist-nat'] = False    # del this later when i clean up (after review)
 flags_run['calc-wbgt'] = False   # calculate the WBGT and save output in SCRATCH. 
                                  # TODO: extend to additional hist models 
 
-flags_run['run-pi'] = True # if you already have it saved, dont re-run it
+flags_run['run-pi'] = False # if you already have it saved, dont re-run it
 
 
 # ======================
@@ -205,7 +205,7 @@ if __name__ == '__main__':
                     else:
                         # open pre-calculated PI thresholds
                         filepath = glob.glob(os.path.join(outdirs,'output_empirical',metric, 'ISIMIP3b',GCM, 
-                                        f'*{metric}_pre-industrial_{start_pi}_{end_pi}.nc'))[0]  # TODO: CLEANUP this path/fxn/flags outdirs
+                                        f'*{metric}_pre-industrial_returnperiod_{start_pi}_{end_pi}.nc'))[0]  # TODO: CLEANUP this path/fxn/flags outdirs
                         print('filepath pi', filepath)
                         
                         data_pi_percentile = xr.open_dataarray(filepath,  decode_times=False)
@@ -215,14 +215,23 @@ if __name__ == '__main__':
                     
                     # run for only one central year and take 30 year interval around that 
                     if flags['time_method'] == 'single-year':
-                            
-                        # open time-window arrays with dask 
-                        da_pres = open_model_data(GCM, 
-                                                  period='target-year', 
-                                                  scenario1='historical', 
-                                                  scenario2='ssp370', 
-                                                  target_year=target_years, # target year in obs to match models to
-                                                  windowsize=30)
+
+                        # open time-slice with dask 
+                        if target_years is not None:
+                            da_pres = open_model_data(GCM, 
+                                                      period='target-year', 
+                                                      scenario1='historical', 
+                                                      scenario2='ssp370', 
+                                                      target_year=target_years, # target year in obs to match models to
+                                                      windowsize=30)
+                        elif target_temperature is not None:
+                            da_pres = open_model_data(GCM, 
+                                                      period='target-year', 
+                                                      scenario1='historical', 
+                                                      scenario2='ssp370', 
+                                                      target_year=None, 
+                                                      target_temperature=target_temperature,# target temp to match models to (elsewhere check years)
+                                                      windowsize=30)                            
 
                         # calc return level X1 in PD 
                         # i.e. has same return period in present-day as 

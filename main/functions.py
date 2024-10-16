@@ -98,7 +98,7 @@ def merge_model_gmst(GCMs, dir_gmst_models):
 
 
 
-def calc_warming_periods_models(GCMs, dir_gmst_models, observed_warming_path, target_year, method='ar6', windowsize=30):
+def calc_warming_periods_models(GCMs, dir_gmst_models, observed_warming_path, target_year=None, target_temperature=None, method='ar6', windowsize=30):
     """
     calculates year when target warming is reached (central year) and start and end year of 30-year period (standard here) in model 
 
@@ -109,6 +109,7 @@ def calc_warming_periods_models(GCMs, dir_gmst_models, observed_warming_path, ta
         dir_gmst_models: (str) directory of model gmst time series 
         observed_warming_path: (str) filepath to forster obs warming data
         target_year: (int) what year to calc for
+        target_temperature: (float) alternative to target_year, what warming level to calc for 
     Returns:
         df_out: (df) df model present day warming 
                     columns: model, year, value, target, start_y, end_y
@@ -124,9 +125,15 @@ def calc_warming_periods_models(GCMs, dir_gmst_models, observed_warming_path, ta
     
     # models rolling mean 10 years 
     df = df_gmst_mod.rolling(window, min_periods=1, center=centered).mean() 
-    
-    df_obs = pd.read_csv(observed_warming_path).rename(columns={'timebound_upper':'year'}).set_index('year')[['gmst']]
-    val = df_obs.loc[target_year+1].values[0] # the upper timebound is excluded so add +1 - check this
+
+    # determine temperature to match to 
+    if target_temperature is not None:
+        val = target_temperature
+    elif target_year is not None:
+        df_obs = pd.read_csv(observed_warming_path).rename(columns={'timebound_upper':'year'}).set_index('year')[['gmst']]
+        val = df_obs.loc[target_year+1].values[0] # the upper timebound is excluded so add +1 - check this
+    else:
+        print('error define either target year or target temperature')
 
     # make empty dataframe
     d = {'model': [], 'year': [],  'value': [], 'target': [], 'start_y': [], 'end_y': []}
@@ -339,11 +346,12 @@ def calc_warming_periods_models_all_years(GCMs,
 
 
 
-def open_model_data(model, # move this fxn to utils??
+def open_model_data(model, 
                     period, 
                     scenario1, 
                     scenario2=None, 
-                    target_year=2022, 
+                    target_year=None, 
+                    target_temperature=None,
                     windowsize=30, 
                     chunk_version=flags['chunk_version'], #for job submit set to 2! move this to utils ?
                     variable=var,
@@ -400,10 +408,16 @@ def open_model_data(model, # move this fxn to utils??
     # if you give it a target year to match in observations, by default will use ar6 10-year method with minsize=1 and find closest match
     # and calc interval as +/- 15 years wrt central yaer. Check if you want to change any of these defaults. 
     elif period == 'target-year':
-        warming_periods = calc_warming_periods_models(model, dir_gmst_models, observed_warming_path, target_year=target_year, method='ar6', windowsize=windowsize);
-        # maybe make a different function that does it just for one model... possibly will be faster
+        if target_year is not None:
+            warming_periods = calc_warming_periods_models(model, dir_gmst_models, observed_warming_path, target_year=target_year, method='ar6', windowsize=windowsize);
+        elif target_temperature is not None:
+            warming_periods = calc_warming_periods_models(model, dir_gmst_models, observed_warming_path, target_temperature=target_temperature, method='ar6', windowsize=windowsize);
+
         startyear = warming_periods.loc[model].start_y
-        endyear = warming_periods.loc[model].end_y    
+        endyear = warming_periods.loc[model].end_y   
+
+
+
     
     # if you ask for a specific model year
     elif period == 'model-year':
@@ -423,7 +437,8 @@ def open_model_data(model, # move this fxn to utils??
         
     
     if period == 'target-year' or period == 'model-year':
-        da.attrs['target_year'] = target_year
+        if target_year is not None:
+            da.attrs['target_year'] = target_year
         
     
     check_length(da, startyear, endyear)
@@ -1312,11 +1327,11 @@ def open_all_wbgt_summary(GCMs,
 def calc_number_proportion_people_atleastxdays_10yr(gs_population, 
                                                     GCMs, 
                                                     da_nAHD,  
+                                                    age_ranges = np.arange(0, 105, 10), #0-9 ... 90-99
                                                     x_hot_days = [1,5,10,20,50]):
     # calculate number and proportion of people exposed to at least x nAHD
     
     # Group the data by age ranges and calculate the sum
-    age_ranges = np.arange(0, 105, 10) #0-9 ... 90-99
     grouped_data = gs_population.groupby_bins('ages', age_ranges, right=False).sum() # right boundary excluded i.e. [0,9)
     
     # initiate empty dataarray 

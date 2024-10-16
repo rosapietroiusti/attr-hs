@@ -1,13 +1,13 @@
 #!/bin/bash
 
 #SBATCH --job-name=ah
-#SBATCH --time=4:00:00
+#SBATCH --time=5:00:00
 #SBATCH --ntasks=1 --cpus-per-task=2
-#SBATCH --mem-per-cpu=100G   
+#SBATCH --mem-per-cpu=100G  
 #SBATCH --mail-type=ALL
 #SBATCH --error=outfiles/slurm-%j.err
 #SBATCH --out=outfiles/slurm-%j.out
-#SBATCH --array=1-12
+#SBATCH --array=1-30
 
 
 export OMP_NUM_THREADS=1 # see documentation https://hpc.vub.be/docs/faq/advanced/#how-to-run-python-in-parallel 
@@ -23,7 +23,7 @@ export OMP_NUM_THREADS=1 # see documentation https://hpc.vub.be/docs/faq/advance
 # Takes ~1 hour with 6-array
 #SBATCH --time=5:00:00
 #SBATCH --ntasks=1 --cpus-per-task=2
-#SBATCH --mem-per-cpu=150G   
+#SBATCH --mem-per-cpu=100G   
 
 # try with more cores/memory
 #SBATCH --time=30:00:00
@@ -39,6 +39,10 @@ export OMP_NUM_THREADS=1 # see documentation https://hpc.vub.be/docs/faq/advance
 #SBATCH --time=30:00:00
 #SBATCH --ntasks=1 --cpus-per-task=8
 #SBATCH --mem-per-cpu=30G  
+
+#SBATCH --time=30:00:00
+#SBATCH --ntasks=1 --cpus-per-task=8
+#SBATCH --mem-per-cpu=20G   
 
 # Created: July 2023
 # By: rosa.pietroiusti@vub.be
@@ -72,11 +76,15 @@ arr=$SLURM_ARRAY_TASK_ID
 echo "array member $arr"
 
 # if you run multiple settings through array
-#indx=( 0 1 2 0 1 2 ) # dataset
-#indy=( 0 0 0 1 1 1 ) # time period 
+# indx=( 0 1 2 0 1 2 ) # dataset
+# indy=( 0 0 0 1 1 1 ) # time period 
 
-indx=( 0 1 2 3 0 1 2 3 0 1 2 3 ) # GCM round 2
-indy=( 0 0 0 0 1 1 1 1 2 2 2 2) # variable
+# indx=( 0 1 2 3 0 1 2 3 0 1 2 3 ) # GCM round 2
+# indy=( 0 0 0 0 1 1 1 1 2 2 2 2) # variable
+
+
+indx=( 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 ) # GCMs all 
+indy=( 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 ) # variable
 
 
 START=$(date +%s.%N)
