@@ -241,7 +241,7 @@ def get_filesavename(GCM, scenario1, scenario2, ext, data=None, filepath=None,st
             
     if filepath is None:
         if variable == 'wbgt':
-            dirname='output_sep24' # TODO: change/fix this ! 
+            dirname='output_wbgt' # TODO: change/fix this ! 
             if scenario1=='obsclim':
                 dir1=os.path.join(scratchdirs, dirname, 'WBGT', flags['models'], scenario1, GCM )
             else:

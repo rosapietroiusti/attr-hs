@@ -1,0 +1,256 @@
+Processing dataset: EC-Earth3
+**indir is /scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3
+**outdir is /scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/EC-Earth3
+preprocess-wbgt-models.sh preprocess-wbgt-obs.sh slurm-10095835.out trash
+10 2004 2013
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3/*_WBGT_*.nc<
+                  No such file or directory
+cdo(1) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3/*WBGT_*.nc<
+                  No such file or directory
+cdo    timpctl: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/EC-Earth3/*_2019_10yr_mergetime.nc<
+                No such file or directory
+rm: cannot remove '/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/EC-Earth3/*_2019_10yr_mergetime.nc': No such file or directory
+20 1997 2016
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3/*_WBGT_*.nc<
+                  No such file or directory
+cdo(1) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3/*WBGT_*.nc<
+                  No such file or directory
+cdo    timpctl: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/EC-Earth3/*_2019_20yr_mergetime.nc<
+                No such file or directory
+rm: cannot remove '/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/EC-Earth3/*_2019_20yr_mergetime.nc': No such file or directory
+30 1991 2020
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3/*_WBGT_*.nc<
+                  No such file or directory
+cdo(1) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/EC-Earth3/*WBGT_*.nc<
+                  No such file or directory
+cdo    timpctl: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/EC-Earth3/*_2019_30yr_mergetime.nc<
+                No such file or directory
+rm: cannot remove '/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/EC-Earth3/*_2019_30yr_mergetime.nc': No such file or directory
+Processing dataset: UKESM1-0-LL
+**indir is /scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL
+**outdir is /scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/UKESM1-0-LL
+preprocess-wbgt-models.sh preprocess-wbgt-obs.sh slurm-10095835.out trash
+10 2010 2019
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL/*_WBGT_*.nc<
+                  No such file or directory
+cdo(1) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL/*WBGT_*.nc<
+                  No such file or directory
+cdo    timpctl: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/UKESM1-0-LL/*_2019_10yr_mergetime.nc<
+                No such file or directory
+rm: cannot remove '/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/UKESM1-0-LL/*_2019_10yr_mergetime.nc': No such file or directory
+20 2002 2021
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL/*_WBGT_*.nc<
+                  No such file or directory
+cdo(1) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL/*WBGT_*.nc<
+                  No such file or directory
+cdo    timpctl: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/UKESM1-0-LL/*_2019_20yr_mergetime.nc<
+                No such file or directory
+rm: cannot remove '/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/UKESM1-0-LL/*_2019_20yr_mergetime.nc': No such file or directory
+30 1994 2023
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL/*_WBGT_*.nc<
+                  No such file or directory
+cdo(1) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/UKESM1-0-LL/*WBGT_*.nc<
+                  No such file or directory
+cdo    timpctl: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/UKESM1-0-LL/*_2019_30yr_mergetime.nc<
+                No such file or directory
+rm: cannot remove '/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/UKESM1-0-LL/*_2019_30yr_mergetime.nc': No such file or directory
+Processing dataset: MPI-ESM1-2-HR
+**indir is /scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR
+**outdir is /scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/MPI-ESM1-2-HR
+preprocess-wbgt-models.sh preprocess-wbgt-obs.sh slurm-10095835.out trash
+10 2009 2018
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR/*_WBGT_*.nc<
+                  No such file or directory
+cdo(1) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR/*WBGT_*.nc<
+                  No such file or directory
+cdo    timpctl: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/MPI-ESM1-2-HR/*_2019_10yr_mergetime.nc<
+                No such file or directory
+rm: cannot remove '/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/MPI-ESM1-2-HR/*_2019_10yr_mergetime.nc': No such file or directory
+20 2000 2019
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR/*_WBGT_*.nc<
+                  No such file or directory
+cdo(1) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR/*WBGT_*.nc<
+                  No such file or directory
+cdo    timpctl: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/MPI-ESM1-2-HR/*_2019_20yr_mergetime.nc<
+                No such file or directory
+rm: cannot remove '/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/MPI-ESM1-2-HR/*_2019_20yr_mergetime.nc': No such file or directory
+30 1992 2021
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR/*_WBGT_*.nc<
+                  No such file or directory
+cdo(1) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/MPI-ESM1-2-HR/*WBGT_*.nc<
+                  No such file or directory
+cdo    timpctl: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/MPI-ESM1-2-HR/*_2019_30yr_mergetime.nc<
+                No such file or directory
+rm: cannot remove '/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/MPI-ESM1-2-HR/*_2019_30yr_mergetime.nc': No such file or directory
+Processing dataset: CNRM-ESM2-1
+**indir is /scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1
+**outdir is /scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/CNRM-ESM2-1
+preprocess-wbgt-models.sh preprocess-wbgt-obs.sh slurm-10095835.out trash
+10 2017 2026
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1/*_WBGT_*.nc<
+                  No such file or directory
+cdo(1) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1/*WBGT_*.nc<
+                  No such file or directory
+cdo    timpctl: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/CNRM-ESM2-1/*_2019_10yr_mergetime.nc<
+                No such file or directory
+rm: cannot remove '/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/CNRM-ESM2-1/*_2019_10yr_mergetime.nc': No such file or directory
+20 2007 2026
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1/*_WBGT_*.nc<
+                  No such file or directory
+cdo(1) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1/*WBGT_*.nc<
+                  No such file or directory
+cdo    timpctl: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/CNRM-ESM2-1/*_2019_20yr_mergetime.nc<
+                No such file or directory
+rm: cannot remove '/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/CNRM-ESM2-1/*_2019_20yr_mergetime.nc': No such file or directory
+30 1998 2027
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1/*_WBGT_*.nc<
+                  No such file or directory
+cdo(2) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1/*_WBGT_*.nc<
+                  No such file or directory
+cdo(3) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1/*_WBGT_*.nc<
+                  No such file or directory
+cdo(1) mergetime: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/CNRM-ESM2-1/*WBGT_*.nc<
+                  No such file or directory
+cdo    timpctl: Open failed on >/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/CNRM-ESM2-1/*_2019_30yr_mergetime.nc<
+                No such file or directory
+rm: cannot remove '/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed/CNRM-ESM2-1/*_2019_30yr_mergetime.nc': No such file or directory

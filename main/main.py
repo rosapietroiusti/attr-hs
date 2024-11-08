@@ -67,8 +67,6 @@ from datetime import timedelta, datetime
 from settings import *
 from functions import *
 
-# do i need to import utils ?
-
 
 # maybe I only need these in functions??? TRY
 
@@ -79,7 +77,6 @@ import calc_heat_stress_indicators as hsi
 # dist_cov package from Hauser, 2017 (modified distributions.py to add non-stationary scale paramenter) 
 sys.path.append('../dist_cov/dist_cov/')
 import distributions_dev as distributions
-#import sample as sample - currently not using emcee sampler for CI on params 
 import utils as utils 
 
 
@@ -136,7 +133,7 @@ if __name__ == '__main__':
         print('running analysis for ISIMIP3b models')
 
         
-        # loop over all models
+        # loop over models
         for GCM in [GCMs[int(sys.argv[2])]]:   
             print(datetime.now(), GCM)
             tic = time.time()
@@ -223,7 +220,9 @@ if __name__ == '__main__':
                                                       scenario1='historical', 
                                                       scenario2='ssp370', 
                                                       target_year=target_years, # target year in obs to match models to
-                                                      windowsize=30)
+                                                      windowsize=30,
+                                                     method=warming_period_method, # ar6 or centered window (30yr period)
+                                                     match=warming_period_match) # closest or crossed 
                         elif target_temperature is not None:
                             da_pres = open_model_data(GCM, 
                                                       period='target-year', 
@@ -231,7 +230,9 @@ if __name__ == '__main__':
                                                       scenario2='ssp370', 
                                                       target_year=None, 
                                                       target_temperature=target_temperature,# target temp to match models to (elsewhere check years)
-                                                      windowsize=30)                            
+                                                      windowsize=30,
+                                                      method=warming_period_method, 
+                                                     match=warming_period_match)                            
 
                         # calc return level X1 in PD 
                         # i.e. has same return period in present-day as 
@@ -251,7 +252,7 @@ if __name__ == '__main__':
                         pre-industrial {metric}")
                         
                         
-                        ext = metric+'_'+flags['time_method']
+                        ext = metric+'_'+flags['time_method']+warming_period_method+warming_period_match
                     
                     
                     
@@ -313,18 +314,32 @@ if __name__ == '__main__':
                     
                     if flags['time_method'] == 'single-year':
                         
-                        da_pres = open_model_data(GCM, 
-                                                  period='target-year', 
-                                                  scenario1='historical', 
-                                                  scenario2='ssp370', 
-                                                  target_year=target_years, 
-                                                  windowsize=30)
-
+                        # open time-slice with dask 
+                        if target_years is not None:
+                            da_pres = open_model_data(GCM, 
+                                                      period='target-year', 
+                                                      scenario1='historical', 
+                                                      scenario2='ssp370', 
+                                                      target_year=target_years, # target year in obs to match models to
+                                                      windowsize=30,
+                                                     method=warming_period_method, # ar6 or centered window (30yr period)
+                                                     match=warming_period_match) # closest or crossed 
+                        elif target_temperature is not None:
+                            da_pres = open_model_data(GCM, 
+                                                      period='target-year', 
+                                                      scenario1='historical', 
+                                                      scenario2='ssp370', 
+                                                      target_year=None, 
+                                                      target_temperature=target_temperature,# target temp to match models to (elsewhere check years)
+                                                      windowsize=30,
+                                                     method=warming_period_method, # ar6 or centered window (30yr period)
+                                                     match=warming_period_match) # closest or crossed
+                            
                         # calculate return period of fixed threshold (for PR/nAHD)
                         da_return_period_pres = calc_percentiles_da(da_pres, fixed_threshold)
   
                         
-                        ext = metric+'_'+flags['time_method']
+                        ext = metric+'_'+flags['time_method']+warming_period_method+warming_period_match
                     
                     
                     if flags_run['save'] == True:
@@ -356,12 +371,56 @@ if __name__ == '__main__':
                 
                 
                 elif flags['method'] == 'shift_fit':
-                    
-                    
-                    pass
+                    print('running shift fit, global')
                 
-                
-                # TODO: develop this !! 
+                    # make or open output directory
+                    outdir = make_outdir(GCM, makedirs=True) 
+                    
+                    # open data 
+                    da = open_model_data(model=GCM, 
+                                        period='start-end', 
+                                        scenario1=flags['experiment'], 
+                                        scenario2=None, 
+                                        target_year=None, 
+                                        windowsize=None, 
+                                        chunk_version=flags['chunk_version'], #
+                                        variable=var,
+                                        startyear=flags['shift_period'][0],
+                                        endyear=flags['shift_period'][1],  
+                                       ) 
+                    
+                    # get lowess smoothed covariate (GMST) from GCM simulation
+                    df_gmst_mod = merge_model_gmst(GCM, dir_gmst_models)
+                    df_cov_smo = apply_lowess(df_gmst_mod, df_gmst_mod.index, ntime=4)
+                    
+                    if not flags['shift_loglike']:
+                        da_params = norm_shift_fit(da,
+                                                   df_cov_smo, 
+                                                   shift_sigma=flags['shift_sigma'], 
+                                                   by_month=True)
+                        ext = metric+'_params_shift_loc_mon' # TODO: fix name of old files that dont actually have loglike 
+                    else:
+                        # output log-likelihood of model for CI calculation and goodness of fit - TODO FIX or DELETE THIS 
+                        da_params = norm_shift_fit_loglike(da,
+                                                   df_cov_smo, 
+                                                   shift_sigma=flags['shift_sigma'], 
+                                                   by_month=True)                
+            
+                        ext = metric+'_params_shift_loc_mon_loglike'
+            
+                    if flags_run['save'] == True:
+                        
+                        filesavename = get_filesavename(GCM, 
+                                                        'historical',
+                                                        'ssp370', 
+                                                        ext=ext, 
+                                                        keep_scenario=True,
+                                                        startyear=flags['shift_period'][0], 
+                                                        endyear=flags['shift_period'][1])  
+                        
+                        da_params.to_netcdf(os.path.join(outdir, filesavename))
+                        
+                        print(datetime.now(), f"saved params of shift fit")
 
         
         
@@ -424,7 +483,7 @@ if __name__ == '__main__':
                 # make or open output directory
                 outdir = make_outdir(dataset, makedirs=True) 
                 
-                # open data - HERE CHECK THIS OPENS TASMAX ! 
+                # open data 
                 da = open_model_data(model=dataset, 
                                     period='start-end', 
                                     scenario1=flags['experiment'], 

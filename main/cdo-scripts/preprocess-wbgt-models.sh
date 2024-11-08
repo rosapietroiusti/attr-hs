@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --time=30:00:00
+#SBATCH --time=10:00:00
 #SBATCH --ntasks=1 --cpus-per-task=4
 #SBATCH --mail-type=ALL
 
@@ -22,11 +22,12 @@ module purge
 module load CDO/2.2.2-gompi-2023a
 
 # set indir / outdir 
-inDIRs=${VSC_SCRATCH_VO_USER}/attr-hw/output/output_apr24-9110516/WBGT/ISIMIP3b
-outDIRs=${VSC_SCRATCH_VO_USER}/attr-hw/output/output_apr24-9110516/WBGT/ISIMIP3b/preprocessed
+inDIRs=${VSC_SCRATCH_VO_USER}/attr-hw/output/output_wbgt/WBGT/ISIMIP3b
+outDIRs=${VSC_SCRATCH_VO_USER}/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed
 
 # set datasets to loop over
-datasets=('CanESM5' 'CNRM-CM6-1' 'GFDL-ESM4' 'IPSL-CM6A-LR' 'MIROC6' 'MRI-ESM2-0' ) 
+#datasets=('CanESM5' 'CNRM-CM6-1' 'GFDL-ESM4' 'IPSL-CM6A-LR' 'MIROC6' 'MRI-ESM2-0' ) # first round
+datasets=( 'EC-Earth3' 'UKESM1-0-LL' 'MPI-ESM1-2-HR' 'CNRM-ESM2-1' ) # second round 
 
 # variable
 var='WBGT'
@@ -41,26 +42,42 @@ for dataset in "${datasets[@]}"; do
 echo "Processing dataset: $dataset"
 
 
+# first round 
+# if [ $dataset = "${datasets[0]}" ]
+# then
+#     endYEARs=( 2004	2008 2009 )
+# elif [ $dataset = "${datasets[1]}" ]
+# then     
+#     endYEARs=( 2021	2021 2020 )
+# elif [ $dataset = "${datasets[2]}" ]
+# then     
+#     endYEARs=( 2029	2029 2029 )
+# elif [ $dataset = "${datasets[3]}" ]
+# then     
+#     endYEARs=( 2009	2010 2011 )
+# elif [ $dataset = "${datasets[4]}" ]
+# then     
+#     endYEARs=( 2034	2034 2033 )
+# elif [ $dataset = "${datasets[5]}" ]
+# then     
+#     endYEARs=( 2021	2022 2024 )
+# fi
+
+
+# second round 
 if [ $dataset = "${datasets[0]}" ]
 then
-    endYEARs=( 2004	2008 2009 )
+    endYEARs=( 2013	2016 2020 )
 elif [ $dataset = "${datasets[1]}" ]
 then     
-    endYEARs=( 2021	2021 2020 )
+    endYEARs=( 2019	2021 2023 )
 elif [ $dataset = "${datasets[2]}" ]
 then     
-    endYEARs=( 2029	2029 2029 )
+    endYEARs=( 2018	2019 2021 )
 elif [ $dataset = "${datasets[3]}" ]
 then     
-    endYEARs=( 2009	2010 2011 )
-elif [ $dataset = "${datasets[4]}" ]
-then     
-    endYEARs=( 2034	2034 2033 )
-elif [ $dataset = "${datasets[5]}" ]
-then     
-    endYEARs=( 2021	2022 2024 )
+    endYEARs=( 2026	2026 2027 )
 fi
-
 
 
 
@@ -120,7 +137,7 @@ cdo -O --timestat_date first timmean -gtc,30 -selyear,${startYEAR}/${endYEAR} -m
 cdo -O --timestat_date first timmean -gtc,33 -selyear,${startYEAR}/${endYEAR} -mergetime ${inDIR}/*_${var}_*.nc $outDIR/${FILENAME}_2019_${nYEAR}yr_pctl33.nc
 
 
-# 99th percentile
+# 99th percentile in present-day time period
 
 cdo -O --timestat_date first selyear,${startYEAR}/${endYEAR} -mergetime "${inDIR}"/*"${var}"_*.nc $outDIR/${FILENAME}_2019_${nYEAR}yr_mergetime.nc
 

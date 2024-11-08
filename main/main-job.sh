@@ -1,13 +1,13 @@
 #!/bin/bash
 
-#SBATCH --job-name=ah
-#SBATCH --time=5:00:00
-#SBATCH --ntasks=1 --cpus-per-task=2
-#SBATCH --mem-per-cpu=100G  
+#SBATCH --job-name=ah-sf
+#SBATCH --time=30:00:00
+#SBATCH --ntasks=1 --cpus-per-task=8
+#SBATCH --mem-per-cpu=20G 
 #SBATCH --mail-type=ALL
 #SBATCH --error=outfiles/slurm-%j.err
 #SBATCH --out=outfiles/slurm-%j.out
-#SBATCH --array=1-30
+#SBATCH --array=3-20
 
 
 export OMP_NUM_THREADS=1 # see documentation https://hpc.vub.be/docs/faq/advanced/#how-to-run-python-in-parallel 
@@ -19,6 +19,7 @@ export OMP_NUM_THREADS=1 # see documentation https://hpc.vub.be/docs/faq/advance
 
 
 # JOB SPECS: 
+
 # for empirical percentiles single year (only present): ntasks 1 cpus per task 2, mem 180 G (or less! 100 should be enough), 2h should be enough
 # Takes ~1 hour with 6-array
 #SBATCH --time=5:00:00
@@ -31,7 +32,18 @@ export OMP_NUM_THREADS=1 # see documentation https://hpc.vub.be/docs/faq/advance
 #SBATCH --ntasks=2 --cpus-per-task=15
 #SBATCH --mem-per-cpu=50G   
 
+#SBATCH --time=1:00:00
+#SBATCH --ntasks=1 --cpus-per-task=2
+#SBATCH --mem-per-cpu=100G  
+#SBATCH --mail-type=ALL
+#SBATCH --error=outfiles/slurm-%j.err
+#SBATCH --out=outfiles/slurm-%j.out
+#SBATCH --array=1-30
+
+
+
 # for shift fit increase n of cores/nodes and mem - testing see test-job.sh 
+
 #SBATCH --time=25:00:00
 #SBATCH --ntasks=1 --cpus-per-task=12 or more???
 #SBATCH --mem-per-cpu=20G   or more and go himem??
@@ -82,14 +94,18 @@ echo "array member $arr"
 # indx=( 0 1 2 3 0 1 2 3 0 1 2 3 ) # GCM round 2
 # indy=( 0 0 0 0 1 1 1 1 2 2 2 2) # variable
 
+# empirical pct on all GCMs for 3 vars
+# indx=( 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 ) # GCMs all 
+# indy=( 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 ) # variable
 
-indx=( 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 ) # GCMs all 
-indy=( 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 ) # variable
+# shift fit gcms on 2 time periods
+indx=( 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 ) # GCMs all 
+indy=( 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 ) # variable
 
 
 START=$(date +%s.%N)
 echo ${indx[$arr-1]} ${indy[$arr-1]}
-python main.py "$ver" ${indx[$arr-1]} ${indy[$arr-1]}
+python main.py "$ver" ${indx[$arr-1]} ${indy[$arr-1]} 
 
 #python main.py "$ver" $arr
 

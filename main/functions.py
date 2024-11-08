@@ -98,7 +98,7 @@ def merge_model_gmst(GCMs, dir_gmst_models):
 
 
 
-def calc_warming_periods_models(GCMs, dir_gmst_models, observed_warming_path, target_year=None, target_temperature=None, method='ar6', windowsize=30):
+def calc_warming_periods_models(GCMs, dir_gmst_models, observed_warming_path, target_year=None, target_temperature=None, method='ar6', windowsize=30, match='closest',centered=None):
     """
     calculates year when target warming is reached (central year) and start and end year of 30-year period (standard here) in model 
 
@@ -110,6 +110,8 @@ def calc_warming_periods_models(GCMs, dir_gmst_models, observed_warming_path, ta
         observed_warming_path: (str) filepath to forster obs warming data
         target_year: (int) what year to calc for
         target_temperature: (float) alternative to target_year, what warming level to calc for 
+        method: 'ar6', 'window' 
+        match: 'closest', 'crossed' 
     Returns:
         df_out: (df) df model present day warming 
                     columns: model, year, value, target, start_y, end_y
@@ -120,7 +122,11 @@ def calc_warming_periods_models(GCMs, dir_gmst_models, observed_warming_path, ta
     if method == 'ar6':
         window=10 
         centered=False
-    else:
+    elif method=='window':
+        window=windowsize
+        if centered is None:
+            centered=True
+    else :
         print('error method and filepath to observed warming not defined')
     
     # models rolling mean 10 years 
@@ -140,12 +146,18 @@ def calc_warming_periods_models(GCMs, dir_gmst_models, observed_warming_path, ta
     df_out = pd.DataFrame(data=d)
 
     for i, j in zip(df.columns.values, range(len(df.columns.values))):
-        df_closest = df[i].iloc[(df[i]-val).abs().argsort()[:1]]
-        year = df_closest.index.values[0]
+
+        if match=='closest':
+            df_closest = df[i].iloc[(df[i]-val).abs().argsort()[:1]]
+            year = df_closest.index.values[0]
+        elif match=='crossed':
+            crossing = (df[i] - val).apply(np.sign).diff()
+            year = int(crossing[crossing > 0].index.min())
+        
         df_mod = pd.Series({'model': i, 'year': year ,
-                            'value': np.round(df_closest.values[0],4),
+                            'value': np.round(df[i].loc[year],4),
                             'target': val,
-                           'start_y': year - int(windowsize / 2) + 1, # check this skew ok e.g. targetyear - 14
+                           'start_y': year - int(windowsize / 2) + 1, # e.g. targetyear - 14
                            'end_y': year + int(windowsize /2) }) # e.g. targetyear + 15
         df_out = pd.concat([df_out, df_mod.to_frame().T], ignore_index=True)
     
@@ -156,11 +168,201 @@ def calc_warming_periods_models(GCMs, dir_gmst_models, observed_warming_path, ta
 
 
 
+def get_gmst_smo(ntime=4, observed_warming_path=observed_warming_path_annual):
+    
+    df_gmst_obs_annual = pd.read_csv(observed_warming_path
+                                        ).rename(columns={'timebound_lower':'year'}
+                                        ).set_index('year')[['gmst']]
+    gmst_smo = pd.DataFrame(apply_lowess(df_gmst_obs_annual, df_gmst_obs_annual.index, ntime=ntime))
+    
+    return gmst_smo
+    
+# def calc_warming_periods_models_all_years(GCMs, 
+#                                           dir_gmst_models, 
+#                                           observed_warming_path,
+#                                           method='ar6', 
+#                                           window=10,
+#                                           min_periods=10,
+#                                           flatten=False):
+
+    
+#     """
+#     Calculates when warming level from observations is reached in models, outputs central year in model timeseries. 
+    
+#     ----
+#     TODO: check that this kind of GMT remapping is ok, cfr. with Luke's
+#     clean up this function 
+#     ----
+
+#     Inputs:
+#         dir_gmst_models: (str) directory of model gmst time series 
+#         observed_warming_path: (str) filepath to forster obs warming data (important! decadal for ar6, annual for 30-yr)
+#         GCMs: (list of str) list of model names
+#         methods:    'ar6' :    end of 10-year average (Forster et al. AR6 method)
+#                     'window' : end of average of number of years you decide
+#                     'sr15' :  add 14 years to obs data by creating OLS on last 15 years, 
+#                                and match central year of 30-year average (Forster et al. approx. SR1.5 method)
+#     Returns:
+#         df_out: (df) if flatten==True
+#                     columns: year, temp_obs, year_{model}, temp_{model} for each model in GCMs
+#         OR
+#         da_out: (da) if flatten==False:
+#                     with coords year (year in obs), model (obs or GCMs), feature (year_mod or temp)
+                    
+#     """
+    
+        
+#     if method=='ar6':
+        
+#         window=10
+#         centered=False
+        
+#         # obs
+#         df_obs = pd.read_csv(observed_warming_path).rename(
+#             columns={'timebound_upper':'year'}).set_index(
+#             'year')[['gmst']]
+        
+#         df_obs.index = df_obs.index - 1 # 1860-2023 is actually 1859-2022
+#                                         # the upper timebound is excluded so add -1 to 
+#                                         # index to get correct value 
+#                                         # e.g. 2013-2023 (excl) = 2013-2022 (incl) = 1.15 degC (val in paper)
+
+#     elif method=='window':
+        
+#         centered=False
+        
+#         # obs
+#         df_obs = pd.read_csv(observed_warming_path).rename(
+#             columns={'timebound_upper':'year'}).set_index(
+#             'year')[['gmst']].rolling(window, min_periods=min_periods, center=centered).mean().dropna() 
+        
+#         df_obs.index = df_obs.index - 1 # 1860-2023 is actually 1859-2022
+#                                         # the upper timebound is excluded so add -1 to 
+#                                         # index to get correct value 
+#                                         # e.g. 2013-2023 (excl) = 2013-2022 (incl) = 1.15 degC (val in paper)
+                    
+    
+#     # for sensitivity test 
+#     elif method=='sr15':
+#         # extend obs for 15 last years
+#         def fit_trend(data, var):
+#             x=data.index
+#             y=data[var]
+#             fit=sm.OLS(y, sm.add_constant(x)).fit()    
+            
+#             return fit, x, y
+
+#         window=30
+#         centered=True
+        
+#         # extend obs for 15 last years
+#         df_obs = pd.read_csv(observed_warming_path).rename(
+#             columns={'timebound_upper':'year'}).set_index(
+#             'year')[['gmst']]
+        
+#         # fit linear regression and predict for next 15 years
+#         fit, x, y = fit_trend(df_obs[-15:], 'gmst')
+#         x_fut = np.arange(df_obs.index[-1]+1,df_obs.index[-1]+14)
+#         x_fut = sm.add_constant(x_fut)
+#         predictions = fit.predict(x_fut)
+        
+#         # add to previous df
+#         df_obs =  pd.concat([df_obs, pd.DataFrame({'year':x_fut[:,1].astype(int), 'gmst': predictions}).set_index('year')])
+        
+#         # 30 year rolling mean of obs 
+#         df_obs = df_obs.rolling(window, min_periods=min_periods, center=centered).mean().dropna() 
+        
+#     else:
+#         print('error method not defined')
+    
+    
+    
+#     # open modelled gmst annual 
+#     df_gmst_mod = merge_model_gmst(GCMs, dir_gmst_models)
+
+#     # models rolling mean  
+#     df = df_gmst_mod.rolling(window, min_periods=min_periods, center=centered).mean().dropna() 
+
+    
+#     # initiate empty data array 
+#     # create empty arrays for year, model, and feature
+#     years = df_obs.index
+#     models = ['obs'] + df.columns.tolist()  # Add 'obs' to the beginning
+#     features = ['year_mod', 'temp']
+
+#     # Create a MultiIndex for the coordinates
+#     coords = {
+#         'year': years,
+#         'model': models,
+#         'feature': features
+#     }
+
+#     # Create an empty DataArray with the specified coordinates
+#     da_out = xr.DataArray(
+#         data=None,  # Provide your data here
+#         coords=coords,
+#         dims=('year', 'model', 'feature')
+#     )
+
+#     # add observational info 
+#     da_out.loc[{'model': 'obs', 'feature':'year_mod'}] =  df_obs.index
+#     da_out.loc[{'model': 'obs', 'feature':'temp'}] =  df_obs.gmst.values
+
+#     # loop over models
+#     for i in df.columns.values:
+
+#         model_years = []
+#         model_temps = []
+
+#         # loop over years
+#         for year in years:
+#             # get target year value
+#             val = df_obs.loc[year].values[0] # value for single year. 
+
+
+#             # find closest year and temperature
+#             df_closest = df[i].iloc[(df[i]-val).abs().argsort()[:1]]
+#             model_y = df_closest.index.values[0]
+#             model_t = df_closest.values[0]
+#             # append to list 
+#             model_years.append(model_y)
+#             model_temps.append(model_t)
+
+#         # assign data to da 
+#         da_out.loc[{'model': i, 'feature':'year_mod'}] =  np.array(model_years)
+#         da_out.loc[{'model': i, 'feature':'temp'}] =  np.array(model_temps)
+    
+#     # return a data array
+#     if flatten == False:
+        
+#         return da_out
+    
+#     # return a dataframe
+#     elif flatten == True:
+        
+#         df_master = None
+        
+#         # loop over models
+#         for i in da_out.model.values:
+            
+#             df_add = da_out.sel(model=i).to_pandas().rename(columns={"year_mod": "year"})
+#             if df_master is None:
+#                 df_master = df_add 
+#             else:
+#                 df_master = df_master.merge(df_add, suffixes=(f'', f'_{i}'), left_index=True, right_index=True)
+
+#         df_master = df_master.drop(columns=["year"]).rename(columns={"temp": "temp_obs"}) 
+        
+#         df_out = df_master
+        
+#         return df_out
+
 
 def calc_warming_periods_models_all_years(GCMs, 
                                           dir_gmst_models, 
                                           observed_warming_path,
                                           method='ar6', 
+                                          centered=False, # only relevant if method is 'centered'
                                           window=10,
                                           min_periods=10,
                                           flatten=False):
@@ -178,17 +380,20 @@ def calc_warming_periods_models_all_years(GCMs,
         dir_gmst_models: (str) directory of model gmst time series 
         observed_warming_path: (str) filepath to forster obs warming data (important! decadal for ar6, annual for 30-yr)
         GCMs: (list of str) list of model names
-        methods:    'ar6' :    end of 10-year average (Forster et al. AR6 method)
-                    'window' : end of average of number of years you decide
-                    '30-yr' :  add 14 years to obs data by creating OLS on last 15 years, 
-                               and match central year of 30-year average (Forster et al. approx. SR1.5 method)
+        methods:    'ar6' :    end of 10-year average 
+                    'window' : end or center of average of number of years you decide
+                    'sr15' :  add 14 years to obs data by creating OLS on last 15 years, 
+                               and match central year of 30-year average (~SR1.5 method)
+    
     Returns:
-        df_out: (df) if flatten==True
+        df_out: (df) df model warming level years
                     columns: year, temp_obs, year_{model}, temp_{model} for each model in GCMs
-        OR
-        da_out: (da) if flatten==False:
-                    with coords year (year in obs), model (obs or GCMs), feature (year_mod or temp)
+                    if flatten==True
                     
+        OR
+        
+        da_out: (da) with coords year (year in obs), model (obs or GCMs), feature (year_mod or temp)
+                    if flatten==False:
     """
     
         
@@ -208,9 +413,7 @@ def calc_warming_periods_models_all_years(GCMs,
                                         # e.g. 2013-2023 (excl) = 2013-2022 (incl) = 1.15 degC (val in paper)
 
     elif method=='window':
-        
-        centered=False
-        
+                
         # obs
         df_obs = pd.read_csv(observed_warming_path).rename(
             columns={'timebound_upper':'year'}).set_index(
@@ -223,7 +426,7 @@ def calc_warming_periods_models_all_years(GCMs,
                     
     
     # for sensitivity test 
-    elif method=='30-yr':
+    elif method=='sr15':
         # extend obs for 15 last years
         def fit_trend(data, var):
             x=data.index
@@ -343,15 +546,14 @@ def calc_warming_periods_models_all_years(GCMs,
 
 
 
-
-
-
 def open_model_data(model, 
                     period, 
                     scenario1, 
                     scenario2=None, 
                     target_year=None, 
                     target_temperature=None,
+                    method='ar6',
+                    match='closest', 
                     windowsize=30, 
                     chunk_version=flags['chunk_version'], #for job submit set to 2! move this to utils ?
                     variable=var,
@@ -388,7 +590,7 @@ def open_model_data(model,
         filepaths = get_filepaths(variable,dir1,dir2);  # in utils.py
         
     elif variable=='wbgt':
-        dirname='output_sep24' # clean this?
+        dirname='output_wbgt' # clean this!!
         # could delete this if not using this function on 3a
         if flags['models']=='ISIMIP3a':
             dir1=os.path.join(scratchdirs, dirname, 'WBGT', flags['models'], scenario1, model )
@@ -409,9 +611,11 @@ def open_model_data(model,
     # and calc interval as +/- 15 years wrt central yaer. Check if you want to change any of these defaults. 
     elif period == 'target-year':
         if target_year is not None:
-            warming_periods = calc_warming_periods_models(model, dir_gmst_models, observed_warming_path, target_year=target_year, method='ar6', windowsize=windowsize);
+            warming_periods = calc_warming_periods_models(model, dir_gmst_models, observed_warming_path, target_year=target_year, method=method, match=match, windowsize=windowsize);
         elif target_temperature is not None:
-            warming_periods = calc_warming_periods_models(model, dir_gmst_models, observed_warming_path, target_temperature=target_temperature, method='ar6', windowsize=windowsize);
+            warming_periods = calc_warming_periods_models(model, dir_gmst_models, observed_warming_path, target_temperature=target_temperature, method=method, match=match, windowsize=windowsize);
+
+        # IMPLEMENT 30-yr window for 1.5 warming level !! 
 
         startyear = warming_periods.loc[model].start_y
         endyear = warming_periods.loc[model].end_y   
@@ -695,10 +899,8 @@ def norm_shift_fit(da, df_cov, shift_sigma=False, by_month=False):
     def apply_fit_to_group(da_group):
         """Apply the fitting function to a group of data."""
         t = da_group.time.dt.year
-        cov = df_cov.loc[t.values].values.squeeze()
-        
-        #print(t.values) # checking bootstrap
-        
+        cov = df_cov.loc[t.values].values.squeeze() # get covariate values for correct years
+                
         output_sizes = {'params': 4} if shift_sigma else {'params': 3}
         dask_gufunc_kwargs = {'output_sizes': output_sizes}
 
@@ -1312,7 +1514,65 @@ def open_all_wbgt_summary(GCMs,
     return da_master
         
 
+              
+"""
+ ---------------------------------------------------------------
+ PART 4. Reanalysis 
+ ---------------------------------------------------------------
+"""                       
+                        
+def calc_nAHD_shift_fit(da_params, threshold, gmst_smo,year_pres=2023,GWI=1.3):
 
+    from scipy.stats import norm
+
+    gmst_pres = float(gmst_smo.loc[year_pres].iloc[0]) # take smoothed or not smoothed covariate ?? 
+    gmst_pi = float(gmst_pres - GWI)
+
+    b0 = da_params.sel(params='b0')
+    b1 = da_params.sel(params='b1')
+
+
+    if len(da_params.params) >3:
+        sigma_b0 = da_params.sel(params='sigma_b0')
+        sigma_b1 = da_params.sel(params='sigma_b1')
+        norm_pi, norm_pres = norm(loc=b0+b1*gmst_pi, scale=sigma_b0+sigma_b1*gmst_pi), norm(loc=b0+b1*gmst_pres, scale=sigma_b0+sigma_b1*gmst_pres)
+    elif len(da_params.params) ==3:
+        sigma_b0 = da_params.sel(params='sigma')
+        norm_pi, norm_pres = norm(loc=b0+b1*gmst_pi, scale=sigma_b0), norm(loc=b0+b1*gmst_pres, scale=sigma_b0)
+
+    data = norm_pres.sf(threshold)
+    da_p1 = xr.DataArray(
+        data=data,
+        dims=["dataset", "month", "lat", "lon", ],
+        coords=dict(
+            lon=(["lon"], da_params.lon.data),
+            lat=(["lat"], da_params.lat.data),
+            month=da_params.month.data,
+            dataset=da_params.dataset.data) )
+    
+    data = norm_pi.sf(threshold)
+    da_p0 = xr.DataArray(
+        data=data,
+        dims=[ "dataset", "month", "lat", "lon"],
+        coords=dict(
+            lon=(["lon"], da_params.lon.data),
+            lat=(["lat"], da_params.lat.data),
+            month=da_params.month.data,
+            dataset=da_params.dataset.data) )
+
+    days_in_month = np.array([31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]) # ignoring leap years
+
+    # add dimension for correct multiplication
+    days_in_month_da = xr.DataArray(days_in_month, dims=['month'], coords={'month': da_p1['month']})
+
+    # calc nAHD per month and per year
+    da_nAHD_mo = (da_p1 - da_p0) * days_in_month_da
+    
+    da_nAHD = da_nAHD_mo.sum(dim='month')
+
+
+    return da_nAHD, da_nAHD_mo, da_p0, da_p1                        
+    
                 
                         
                         

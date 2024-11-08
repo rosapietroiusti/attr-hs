@@ -107,7 +107,124 @@ def merge_model_gmst(GCMs, dir_gmst_models):
 
 
 
-def calc_warming_periods_models(GCMs, dir_gmst_models, observed_warming_path, target_year, method='ar6', windowsize=30):
+# def calc_warming_periods_models(GCMs, dir_gmst_models, observed_warming_path, target_year, method='ar6', windowsize=30):
+#     """
+#     calculates year when target warming is reached (central year) and start and end year of 30-year period (standard here) in model 
+
+#     if target is warming_ar6_forster window=10, centered=False
+#     if target is warming_sr15_forster window=30, centered=True # not implemented
+
+#     Inputs:
+#         dir_gmst_models: (str) directory of model gmst time series 
+#         observed_warming_path: (str) filepath to forster obs warming data
+#         target_year: (int) what year to calc for
+#     Returns:
+#         df_out: (df) df model present day warming 
+#                     columns: model, year, value, target, start_y, end_y
+#     """
+    
+#     df_gmst_mod = merge_model_gmst(GCMs, dir_gmst_models)
+    
+#     if method == 'ar6':
+#         window=10 
+#         centered=False
+#     else:
+#         print('error method and filepath to observed warming not defined')
+    
+#     # models rolling mean 10 years 
+#     df = df_gmst_mod.rolling(window, min_periods=1, center=centered).mean() 
+    
+#     df_obs = pd.read_csv(observed_warming_path).rename(columns={'timebound_upper':'year'}).set_index('year')[['gmst']]
+#     val = df_obs.loc[target_year+1].values[0] # the upper timebound is excluded so add +1 - check this
+
+#     # make empty dataframe
+#     d = {'model': [], 'year': [],  'value': [], 'target': [], 'start_y': [], 'end_y': []}
+#     df_out = pd.DataFrame(data=d)
+
+#     for i, j in zip(df.columns.values, range(len(df.columns.values))):
+#         df_closest = df[i].iloc[(df[i]-val).abs().argsort()[:1]]
+#         year = df_closest.index.values[0]
+#         df_mod = pd.Series({'model': i, 'year': year ,
+#                             'value': np.round(df_closest.values[0],4),
+#                             'target': val,
+#                            'start_y': year - int(windowsize / 2) + 1, # check this skew ok e.g. targetyear - 14
+#                            'end_y': year + int(windowsize /2) }) # e.g. targetyear + 15
+#         df_out = pd.concat([df_out, df_mod.to_frame().T], ignore_index=True)
+    
+#     df_out = df_out.set_index('model')
+    
+    
+#     return df_out 
+
+# def calc_warming_periods_models(GCMs, dir_gmst_models, observed_warming_path, target_year=None, target_temperature=None, method='ar6', windowsize=30, match='closest'):
+#     """
+#     calculates year when target warming is reached (central year) and start and end year of 30-year period (standard here) in model 
+
+#     if target is warming_ar6_forster window=10, centered=False
+#     if target is warming_sr15_forster window=30, centered=True # not implemented
+
+#     Inputs:
+#         dir_gmst_models: (str) directory of model gmst time series 
+#         observed_warming_path: (str) filepath to forster obs warming data
+#         target_year: (int) what year to calc for
+#         target_temperature: (float) alternative to target_year, what warming level to calc for 
+#         method: 'ar6', 'window' 
+#         match: 'closest', 'crossed' 
+#     Returns:
+#         df_out: (df) df model present day warming 
+#                     columns: model, year, value, target, start_y, end_y
+#     """
+    
+#     df_gmst_mod = merge_model_gmst(GCMs, dir_gmst_models)
+    
+#     if method == 'ar6':
+#         window=10 
+#         centered=False
+#     elif method=='window':
+#         window=windowsize
+#         centered=True
+#     else :
+#         print('error method and filepath to observed warming not defined')
+    
+#     # models rolling mean 10 years 
+#     df = df_gmst_mod.rolling(window, min_periods=1, center=centered).mean() 
+
+#     # determine temperature to match to 
+#     if target_temperature is not None:
+#         val = target_temperature
+#     elif target_year is not None:
+#         df_obs = pd.read_csv(observed_warming_path).rename(columns={'timebound_upper':'year'}).set_index('year')[['gmst']]
+#         val = df_obs.loc[target_year+1].values[0] # the upper timebound is excluded so add +1 - check this
+#     else:
+#         print('error define either target year or target temperature')
+
+#     # make empty dataframe
+#     d = {'model': [], 'year': [],  'value': [], 'target': [], 'start_y': [], 'end_y': []}
+#     df_out = pd.DataFrame(data=d)
+
+#     for i, j in zip(df.columns.values, range(len(df.columns.values))):
+
+#         if match=='closest':
+#             df_closest = df[i].iloc[(df[i]-val).abs().argsort()[:1]]
+#             year = df_closest.index.values[0]
+#         elif match=='crossed':
+#             crossing = (df[i] - val).apply(np.sign).diff()
+#             year = int(crossing[crossing > 0].index.min())
+        
+#         df_mod = pd.Series({'model': i, 'year': year ,
+#                             'value': np.round(df.loc[year],4),
+#                             'target': val,
+#                            'start_y': year - int(windowsize / 2) + 1, # check this skew ok e.g. targetyear - 14
+#                            'end_y': year + int(windowsize /2) }) # e.g. targetyear + 15
+#         df_out = pd.concat([df_out, df_mod.to_frame().T], ignore_index=True)
+    
+#     df_out = df_out.set_index('model')
+    
+    
+#     return df_out 
+
+
+def calc_warming_periods_models(GCMs, dir_gmst_models, observed_warming_path, target_year=None, target_temperature=None, method='ar6', windowsize=30, match='closest'):
     """
     calculates year when target warming is reached (central year) and start and end year of 30-year period (standard here) in model 
 
@@ -118,6 +235,9 @@ def calc_warming_periods_models(GCMs, dir_gmst_models, observed_warming_path, ta
         dir_gmst_models: (str) directory of model gmst time series 
         observed_warming_path: (str) filepath to forster obs warming data
         target_year: (int) what year to calc for
+        target_temperature: (float) alternative to target_year, what warming level to calc for 
+        method: 'ar6', 'window' 
+        match: 'closest', 'crossed' 
     Returns:
         df_out: (df) df model present day warming 
                     columns: model, year, value, target, start_y, end_y
@@ -128,26 +248,41 @@ def calc_warming_periods_models(GCMs, dir_gmst_models, observed_warming_path, ta
     if method == 'ar6':
         window=10 
         centered=False
-    else:
+    elif method=='window':
+        window=windowsize
+        centered=True
+    else :
         print('error method and filepath to observed warming not defined')
     
     # models rolling mean 10 years 
     df = df_gmst_mod.rolling(window, min_periods=1, center=centered).mean() 
-    
-    df_obs = pd.read_csv(observed_warming_path).rename(columns={'timebound_upper':'year'}).set_index('year')[['gmst']]
-    val = df_obs.loc[target_year+1].values[0] # the upper timebound is excluded so add +1 - check this
+
+    # determine temperature to match to 
+    if target_temperature is not None:
+        val = target_temperature
+    elif target_year is not None:
+        df_obs = pd.read_csv(observed_warming_path).rename(columns={'timebound_upper':'year'}).set_index('year')[['gmst']]
+        val = df_obs.loc[target_year+1].values[0] # the upper timebound is excluded so add +1 - check this
+    else:
+        print('error define either target year or target temperature')
 
     # make empty dataframe
     d = {'model': [], 'year': [],  'value': [], 'target': [], 'start_y': [], 'end_y': []}
     df_out = pd.DataFrame(data=d)
 
     for i, j in zip(df.columns.values, range(len(df.columns.values))):
-        df_closest = df[i].iloc[(df[i]-val).abs().argsort()[:1]]
-        year = df_closest.index.values[0]
+
+        if match=='closest':
+            df_closest = df[i].iloc[(df[i]-val).abs().argsort()[:1]]
+            year = df_closest.index.values[0]
+        elif match=='crossed':
+            crossing = (df[i] - val).apply(np.sign).diff()
+            year = int(crossing[crossing > 0].index.min())
+        
         df_mod = pd.Series({'model': i, 'year': year ,
-                            'value': np.round(df_closest.values[0],4),
+                            'value': np.round(df[i].loc[year],4),
                             'target': val,
-                           'start_y': year - int(windowsize / 2) + 1, # check this skew ok e.g. targetyear - 14
+                           'start_y': year - int(windowsize / 2) + 1, # e.g. targetyear - 14
                            'end_y': year + int(windowsize /2) }) # e.g. targetyear + 15
         df_out = pd.concat([df_out, df_mod.to_frame().T], ignore_index=True)
     
@@ -157,12 +292,22 @@ def calc_warming_periods_models(GCMs, dir_gmst_models, observed_warming_path, ta
     return df_out 
 
 
+def get_gmst_smo(ntime=4, observed_warming_path=observed_warming_path_annual):
+    
+    df_gmst_obs_annual = pd.read_csv(observed_warming_path
+                                        ).rename(columns={'timebound_lower':'year'}
+                                        ).set_index('year')[['gmst']]
+    gmst_smo = pd.DataFrame(apply_lowess(df_gmst_obs_annual, df_gmst_obs_annual.index, ntime=ntime))
+    
+    return gmst_smo
+    
 
 
 def calc_warming_periods_models_all_years(GCMs, 
                                           dir_gmst_models, 
                                           observed_warming_path,
                                           method='ar6', 
+                                          centered=False, # only relevant if method is 'window'
                                           window=10,
                                           min_periods=10,
                                           flatten=False):
@@ -181,9 +326,9 @@ def calc_warming_periods_models_all_years(GCMs,
         observed_warming_path: (str) filepath to forster obs warming data (important! decadal for ar6, annual for 30-yr)
         GCMs: (list of str) list of model names
         methods:    'ar6' :    end of 10-year average 
-                    'window' : end of average of number of years you decide
-                    '30-yr' :  add 14 years to obs data by creating OLS on last 15 years, 
-                               and match central year of 30-year average (SR1.5 method)
+                    'window' : end or center of average of number of years you decide
+                    'sr15' :  add 14 years to obs data by creating OLS on last 15 years, 
+                               and match central year of 30-year average (~SR1.5 method)
     
     Returns:
         df_out: (df) df model warming level years
@@ -213,9 +358,7 @@ def calc_warming_periods_models_all_years(GCMs,
                                         # e.g. 2013-2023 (excl) = 2013-2022 (incl) = 1.15 degC (val in paper)
 
     elif method=='window':
-        
-        centered=False
-        
+                
         # obs
         df_obs = pd.read_csv(observed_warming_path).rename(
             columns={'timebound_upper':'year'}).set_index(
@@ -228,7 +371,7 @@ def calc_warming_periods_models_all_years(GCMs,
                     
     
     # for sensitivity test 
-    elif method=='30-yr':
+    elif method=='sr15':
         # extend obs for 15 last years
         def fit_trend(data, var):
             x=data.index
@@ -1263,31 +1406,10 @@ def norm_shift_fit_boot(da, df_cov, shift_sigma=False, by_month=False, bootsize=
 """
 
 
-# def open_data_pi_percentile_hist(GCM, metric):
-#     # if metric == 'TX99':
-#     #     outdirname='output_dec23-8736300'
-#     # elif metric == 'TX95':
-#     #     outdirname='output_jan24-8812631'
-#     # elif metric == 'TX90':
-#     #     outdirname='output_dec23-8739929'
-    
-#     outdirname=outdirnames[metric]
-        
-#     filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
-#                                         outdirname=outdirname), 
-#                                         f'*{metric}_{start_pi}_{end_pi}.nc'))[0]
-#     I0 = xr.open_dataarray(filepath,  decode_times=False)
-    
-#     # the intensity that corresponds to TX99 in historical pre-industrial - DO I STILL NEED THIS ?? 
-    
-#     # DELETE THIS??
-    
-#     return I0
 
 
 
-
-def open_all_nAHD(GCMs, metric, outdirname,year_pres=2023):
+def open_all_nAHD(GCMs, metric, outdirname,year_pres=None, temp_target=None):
     
     method=None
     
@@ -1319,10 +1441,15 @@ def open_all_nAHD(GCMs, metric, outdirname,year_pres=2023):
                 print('p0 file not found')
             
             p0 = 1 - xr.open_dataarray(filepath,  decode_times=False)
-        
-        filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
+
+        if year_pres:
+            filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
                                             outdirname=outdirname,models=models), 
                                     f'*_{metric}_single-year_returnperiod_{year_pres}*'))[0]
+        elif temp_target:
+            filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
+                                            outdirname=outdirname,models=models), 
+                                    f'*_{metric}_single-year*windowcrossed*returnperiod_{temp_target}.nc'))[0]
 
         p1 = 1 - xr.open_dataarray(filepath,  decode_times=False)
         
@@ -1450,7 +1577,7 @@ def open_all_TX_preindustrial(GCMs, metric, outdirname, models=flags['models']):
     return da_master
 
 
-def open_all_p0_p1(GCMs, metric, outdirname,year_pres=2023):
+def open_all_p0_p1(GCMs, metric, outdirname,year_pres=None, temp_target=None):
     
     if '99' in metric:
         p0=0.01
@@ -1501,9 +1628,18 @@ def open_all_p0_p1(GCMs, metric, outdirname,year_pres=2023):
         #                                     outdirname=outdirname, models=models), 
         #                             f'*percentiles_pres*_{metric}*'))[0]
         # except:
-        filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
-                                            outdirname=outdirname, models=models), 
+        # filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
+        #                                     outdirname=outdirname, models=models), 
+        #                             f'*_{metric}_single-year_returnperiod_{year_pres}*'))[0]
+
+        if year_pres:
+            filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
+                                            outdirname=outdirname,models=models), 
                                     f'*_{metric}_single-year_returnperiod_{year_pres}*'))[0]
+        elif temp_target:
+            filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
+                                            outdirname=outdirname,models=models), 
+                                    f'*_{metric}_single-year*windowcrossed*returnperiod_{temp_target}*'))[0]
 
         p1 = 1 - xr.open_dataarray(filepath,  decode_times=False)
         p1.name = 'p1'
@@ -1582,12 +1718,68 @@ def open_all_wbgt_summary(GCMs,
 
                         
                         
-#         if open_what=='timmean' or open_what=='timmax' or open_what=='timmin' or open_what=='std' \
-#         or open_what=='pctl28' or open_what=='pctl30' or open_what=='pctl33':                        
+               
+"""
+ ---------------------------------------------------------------
+ PART 4. Reanalysis 
+ ---------------------------------------------------------------
+"""                       
                         
-                        
-                        
-                        
+def calc_nAHD_shift_fit(da_params, threshold, gmst_smo,year_pres=2023,GWI=1.3):
+
+    from scipy.stats import norm
+
+    if isinstance(gmst_smo, xr.DataArray):
+        gmst_pres = gmst_smo.loc[year_pres]# take smoothed or not smoothed covariate ?? 
+        gmst_pi = gmst_pres - GWI
+    else:
+        gmst_pres = float(gmst_smo.loc[year_pres].iloc[0])  
+        gmst_pi = float(gmst_pres - GWI)        
+
+    b0 = da_params.sel(params='b0')
+    b1 = da_params.sel(params='b1')
+
+
+    if len(da_params.params) >3:
+        sigma_b0 = da_params.sel(params='sigma_b0')
+        sigma_b1 = da_params.sel(params='sigma_b1')
+        norm_pi, norm_pres = norm(loc=b0+b1*gmst_pi, scale=sigma_b0+sigma_b1*gmst_pi), norm(loc=b0+b1*gmst_pres, scale=sigma_b0+sigma_b1*gmst_pres)
+    elif len(da_params.params) ==3:
+        sigma_b0 = da_params.sel(params='sigma')
+        norm_pi, norm_pres = norm(loc=b0+b1*gmst_pi, scale=sigma_b0), norm(loc=b0+b1*gmst_pres, scale=sigma_b0)
+
+    data = norm_pres.sf(threshold)
+    da_p1 = xr.DataArray(
+        data=data,
+        dims=["dataset", "month", "lat", "lon", ],
+        coords=dict(
+            lon=(["lon"], da_params.lon.data),
+            lat=(["lat"], da_params.lat.data),
+            month=da_params.month.data,
+            dataset=da_params.dataset.data) )
+    
+    data = norm_pi.sf(threshold)
+    da_p0 = xr.DataArray(
+        data=data,
+        dims=[ "dataset", "month", "lat", "lon"],
+        coords=dict(
+            lon=(["lon"], da_params.lon.data),
+            lat=(["lat"], da_params.lat.data),
+            month=da_params.month.data,
+            dataset=da_params.dataset.data) )
+
+    days_in_month = np.array([31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]) # ignoring leap years
+
+    # add dimension for correct multiplication
+    days_in_month_da = xr.DataArray(days_in_month, dims=['month'], coords={'month': da_p1['month']})
+
+    # calc nAHD per month and per year
+    da_nAHD_mo = (da_p1 - da_p0) * days_in_month_da
+    
+    da_nAHD = da_nAHD_mo.sum(dim='month')
+
+
+    return da_nAHD, da_nAHD_mo, da_p0, da_p1                        
                         
                         
 """
