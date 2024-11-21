@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --time=10:00:00
+#SBATCH --time=5:00:00
 #SBATCH --ntasks=1 --cpus-per-task=4
 #SBATCH --mail-type=ALL
 
@@ -22,7 +22,7 @@ module purge
 module load CDO/2.2.2-gompi-2023a
 
 # set indir / outdir 
-inDIRs=${VSC_SCRATCH_VO_USER}/attr-hw/output/output_wbgt/WBGT/ISIMIP3b
+inDIRs=${VSC_SCRATCH_VO_USER}/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/historical-rcp370
 outDIRs=${VSC_SCRATCH_VO_USER}/attr-hw/output/output_wbgt/WBGT/ISIMIP3b/preprocessed
 
 # set datasets to loop over
