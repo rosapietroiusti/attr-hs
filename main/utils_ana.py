@@ -417,3 +417,4 @@ def apply_lowess(y, x=None, ntime=4):
     y_out[:] = y_smooth_full[:]
 
     return y_out
+
