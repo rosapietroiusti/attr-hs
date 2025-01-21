@@ -1,8 +1,7 @@
-# attributable heatwaves research
+# attributable heat stress research
 
-# Created June 26 2023
 # rosa.pietroiusti@vub.be
-# Update Feb 2024 
+# Update Jan 2025 
 
 
 

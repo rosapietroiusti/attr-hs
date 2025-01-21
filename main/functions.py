@@ -2,7 +2,7 @@
 Attributable heat stress functions
 
 rosapietroiusti@vub.be
-Last update: September 2024
+Last update: Jan 2025
 
 to check:
 - terminology ecdf object ok? 
@@ -19,24 +19,34 @@ from scipy import interpolate
 import os, glob, re, sys
 import time
 from datetime import datetime
-import statsmodels
-import statsmodels.api as sm
+#import statsmodels
+#import statsmodels.api as sm # only in calc_warming_periods_models_all_years : could delete and comment out that section 
 import dask
 from dask import delayed, compute
+import dask.array as da
 import netCDF4
 
 # import my variables and util functions
 from settings import *
 from utils import * 
 
-# heat stress from Schwingshackl, 2021
-sys.path.append('../CDS_heat_stress_indicators/')
-import calc_heat_stress_indicators as hsi
+# # heat stress from Schwingshackl, 2021
+# sys.path.append('../CDS_heat_stress_indicators/') # to delete once update to newt 
+# import calc_heat_stress_indicators as hsi
+
+sys.path.append('../atmos/')
+from atmos import thermo
 
 # dist_cov Hauser et al, 2022
 sys.path.append('../dist_cov/dist_cov/')
 import distributions as distributions 
 import utils as utils 
+
+
+# Testing this!!!
+# instead of having functions_ana etc. 
+if sys.argv[1] == '-f':
+    sys.argv[2] = sys.argv[3] = 0 
   
     
     
@@ -590,13 +600,15 @@ def open_model_data(model,
         filepaths = get_filepaths(variable,dir1,dir2);  # in utils.py
         
     elif variable=='wbgt':
-        dirname='output_wbgt' # clean this!!
+        dirname='output_jan25' # clean this!!
         # could delete this if not using this function on 3a
         if flags['models']=='ISIMIP3a':
             dir1=os.path.join(scratchdirs, dirname, 'WBGT', flags['models'], scenario1, model )
+            filepaths=get_filepaths(variable.upper(),dir1)
         else:
-            dir1=os.path.join(scratchdirs, dirname, 'WBGT', flags['models'], 'historical-rcp370', model ) # if you always change flags metric you can also replace with fxn 
-        filepaths=get_filepaths(variable.upper(),dir1) # 'WBGT' not 'wbgt' in filename: possibly change for coherence
+            dir1=os.path.join(scratchdirs, dirname, 'WBGT', flags['models'], 'historical', model ) # if you always change flags metric you can also replace with fxn 
+            dir2=os.path.join(scratchdirs, dirname, 'WBGT', flags['models'], 'ssp370', model ) # if you always change flags metric you can also replace with fxn 
+            filepaths=get_filepaths(variable.upper(),dir1,dir2) # 'WBGT' not 'wbgt' in filename: possibly change for coherence
     
     print(f'opening data for {variable}')
     
@@ -666,11 +678,11 @@ def calc_wbgt(GCM,
                 scenario2=None,  
                 chunk_version=2, 
                 variables=None, # VARs
-                startyear=None, # find a way to code this in !! for now does all years 1850-2100
-                endyear=None, # find a way to code this in !!
+                #startyear=None, # find a way to code this in !! for now does all years 1850-2100
+                #endyear=None, # find a way to code this in !!
                 save=True,
                 overwrite=False,
-                outdirname=None): #'output_apr24-9110516'
+                outdirname=None): 
     
     dir1, dir2 = get_dirpaths(GCM, scenario1, scenario2); # in utils, gets all the years! 
 
@@ -678,11 +690,16 @@ def calc_wbgt(GCM,
     
     filepaths = [get_filepaths(VAR,dir1,dir2) for VAR in variables]  # in utils
 
+    if scenario2 is None:
+        experiment=scenario1
+    else:
+        experiment=scenario1+'-'+scenario2
+
     scratchdir =  make_outdir(GCM, 
                               makedirs=True, 
                               scratchdir=True,
                               outdirname=outdirname,
-                             experiment=scenario1) # utils
+                             experiment=experiment) # utils
 
     for i in range(len(filepaths[0])):
         print(i)
@@ -727,10 +744,192 @@ def calc_wbgt(GCM,
                 print(f'wbgt {i} calculated and saved')
     
     
+
+
+""" 
+New version with NEWT
+
+"""
     
+# def calc_wbgt_newt(GCM, 
+#                 scenario1, 
+#                 scenario2=None,  
+#                 chunk_version=2, 
+#                 variables=None,
+#                 save=True,
+#                 overwrite=False,
+#                 outdirname=None): 
     
+#     dir1, dir2 = get_dirpaths(GCM, scenario1, scenario2); # utils, gets all the years! input files
+
+#     print(dir1)
     
+#     filepaths = [get_filepaths(VAR,dir1,dir2) for VAR in variables]  # utils, input files 
+
+#     if scenario2 is None:
+#         experiment=scenario1
+#     else:
+#         experiment=scenario1+'-'+scenario2 # puts them both in one folder and will name them both with experiment name of first scenario
+#                                            # delete this option and run only one scenario at a time? to make separate folders - cleaner, and then fix fxns to open the files
+
+#     scratchdir =  make_outdir(GCM, 
+#                               makedirs=True, 
+#                               scratchdir=True,
+#                               outdirname=outdirname,
+#                              experiment=experiment) # utils
+
+#     for i in range(len(filepaths[0])):
+#         print(i)
+
+#         # check if file already exists
+#         if overwrite==False and save==True:
+
+#             startyear,endyear = xr.open_dataarray(filepaths[0][i]).time.dt.year[[0,-1]]
+#             filesavename = get_filesavename(GCM, 
+#                                             scenario1,
+#                                             scenario2, 
+#                                             ext='WBGT', 
+#                                             startyear=startyear.values, # .values necessary? 
+#                                             endyear=endyear.values, 
+#                                             keep_scenario=True,
+#                                            variable='tasmax') # to get basename from input file, not from output WBGT file  
+
+#             if os.path.exists(os.path.join(scratchdir,filesavename)):
+#                 print(f'wbgt {i} exists')
+#                 exists=True
+#             else:
+#                 exists=False 
+
+#         if overwrite==True or exists==False: 
+
+#             print(f'calculating wbgt {i}')
+
+#             # extract variables 
+#             tasmax,huss,ps= [xr.open_dataarray(files[i]) for files in filepaths]
+            
+#             # check units
+#             if not (tasmax.attrs['units'] == 'K' and 
+#                     huss.attrs['units'] == 'kg kg-1' and 
+#                     ps.attrs['units'] == 'Pa'): 
+#                 raise ValueError("Units are incorrect")
+
+
+#             # calculate psychrometric/thermodynamic/pseudo-adiabatic wet bulb temperature 
+            
+#             # calculate indoor wet bulb globe temperature
+
+            
+#             if save==True:
+
+#                 filesavename = get_filesavename(GCM, scenario1,scenario2, ext='WBGT', data=WBGT, keep_scenario=True)
+#                 WBGT.rename('wbgt').to_netcdf(os.path.join(scratchdir, filesavename))
+
+#                 print(f'wbgt {i} calculated and saved')
+
+
+
     
+#     pass
+    
+
+
+
+
+def calc_wbgt_newt(GCM, 
+                scenario1, 
+                scenario2=None,  
+                variables=None,
+                save=True,
+                overwrite=False,
+                outdirname=None): 
+
+    def calc_wet_bulb(ps_chunk, tasmax_chunk, huss_chunk):
+        return thermo.wet_bulb_temperature(ps_chunk, tasmax_chunk, huss_chunk, saturation='pseudo')
+
+    # input directory and input files
+    print(f'calculating Tw and WBGT for {GCM} {scenario1}')
+    dir1, dir2 = get_dirpaths(GCM, scenario1, scenario2); # utils
+    print('input dir:', dir1)
+    filepaths = [get_filepaths(VAR,dir1,dir2) for VAR in variables]  # utils
+
+    if scenario2 is None:
+        experiment=scenario1
+    else:
+        experiment=scenario1+'-'+scenario2 # TODO: delete this option and run only one scenario at a time? to make separate folders
+
+    # make output directory in scratch  
+    scratchdir =  make_outdir(GCM, 
+                              makedirs=True, 
+                              scratchdir=True,
+                              outdirname=outdirname,
+                             experiment=experiment) # utils
+
+    for i in range(len(filepaths[0])):
+        print(i)
+
+        # check if output file already exists
+        if overwrite==False and save==True:
+
+            startyear,endyear = xr.open_dataarray(filepaths[0][i]).time.dt.year[[0,-1]]
+            filesavename = get_filesavename(GCM, 
+                                            scenario1,
+                                            scenario2, 
+                                            ext='WBGT', 
+                                            startyear=startyear.values, 
+                                            endyear=endyear.values, 
+                                            keep_scenario=True,
+                                           variable='tasmax') # get basename from input file, not from output WBGT file  
+
+            if os.path.exists(os.path.join(scratchdir,filesavename)):
+                print(f'wbgt {i} exists')
+                exists=True
+            else:
+                exists=False 
+
+        if overwrite==True or exists==False:
+            print(f'calculating tw and wbgt {i}')
+    
+            # open variables 
+            tasmax,huss,ps= [xr.open_dataarray(files[i], engine="h5netcdf").chunk({"lat": lat_chunk, "lon": lon_chunk }).astype(float) for files in filepaths]
+
+            # "time": 30,
+            # .chunk({"lat": lat_chunk, "lon": lon_chunk })
+            
+            # check units
+            if not (tasmax.attrs['units'] == 'K' and 
+                    huss.attrs['units'] == 'kg kg-1' and 
+                    ps.attrs['units'] == 'Pa'):
+                raise ValueError("Units are incorrect")
+            
+            # calculate wet bulb temperature (K) 
+            Tw = da.map_blocks(calc_wet_bulb, ps, tasmax, huss, dtype=float)
+            #Tw_compute = Tw.compute()
+            Tw_da = xr.DataArray(Tw.compute(), coords=[ ('time', tasmax.time.values), ('lat', tasmax.lat.values), ('lon',tasmax.lon.values)], name="Wet Bulb Temperature") 
+    
+            # calculate wet bulb globe temperature (deg C) 
+            WBGT = (0.7*Tw_da + 0.3*tasmax).compute() - 273.15
+            
+            if save==True:
+                filesavename = get_filesavename(GCM, scenario1,scenario2, ext='Tw', data=Tw_da,variable='tasmax',keep_scenario=True)
+                Tw_da.attrs['units'] = 'K'
+                Tw_da.rename('Tw').to_netcdf(os.path.join(scratchdir, filesavename))
+                print(f'Tw {i} calculated and saved')
+            
+                filesavename = get_filesavename(GCM, scenario1,scenario2, ext='WBGT', data=WBGT,variable='tasmax', keep_scenario=True)
+                WBGT.attrs['units'] = 'C'
+                WBGT.rename('WBGT').to_netcdf(os.path.join(scratchdir, filesavename))
+                print(f'wbgt {i} calculated and saved')
+
+            del tasmax, huss, ps, Tw, Tw_da, WBGT #Tw_compute,
+
+
+
+
+
+
+
+
+
 
 
 """

@@ -44,8 +44,7 @@ import calc_heat_stress_indicators as hsi
 # dist_cov Hauser et al, 2022
 sys.path.append('../dist_cov/dist_cov/')
 import distributions as distributions
-#import sample as sample
-#import utils as utils 
+
   
     
     
@@ -638,11 +637,16 @@ def calc_wbgt(GCM,
     
     filepaths = [get_filepaths(VAR,dir1,dir2) for VAR in variables]  # in utils.py
 
+    if scenario2 is None:
+        experiment=scenario1
+    else:
+        experiment=scenario1+'-'+scenario2
+
     scratchdir =  make_outdir(GCM, 
                               makedirs=True, 
                               scratchdir=True,
                               outdirname=outdirname,
-                             experiment=scenario1) 
+                             experiment=experiment) 
 
     for i in range(len(filepaths[0])):
         print(i)

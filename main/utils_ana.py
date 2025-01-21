@@ -40,7 +40,7 @@ def make_outdir(GCM, scratchdir=False, makedirs=True, outdirname=None, experimen
     if scratchdir is False:
         outdir = os.path.join(outdirs, outdirname, flags['metric'], flags['models'], GCM ) # e.g. TX99/ISIMIP3b/CanESM5
     else:
-        outdir = os.path.join(scratchdirs, outdirname, flags['metric'], flags['models'], experiment, GCM ) 
+        outdir = os.path.join(scratchdirs, outdirname, flags['metric'], flags['models'], experiment, GCM ) # for saving WBGT in Scratch
         
     
     if not os.path.exists(outdir):
@@ -79,7 +79,18 @@ def get_dirpaths(GCM, scenario1=None, scenario2=None):
     Returns:
         dir1, dir2: (str) directory paths
     """
-    if scenario1=='historical' or scenario1=='hist-nat':
+    
+    if scenario1=='obsclim' or scenario1=='counterclim':
+        if scenario1=='obsclim':
+            indir=indir_obs
+            dir1=os.path.join(indir, GCM)
+            dir2=None
+        elif scenario1=='counterclim':
+            indir=indir_counterclim
+            dir1=os.path.join(indir, GCM)
+            dir2=None
+            
+    else: # if scenario1=='historical' or scenario1=='hist-nat':
         if GCM in GCMs_s or scenario1 == 'hist-nat': 
             indir = indir_s
             dir1 = os.path.join(indir, scenario1, GCM) # hist-nat goes all the way to 2100
@@ -95,15 +106,7 @@ def get_dirpaths(GCM, scenario1=None, scenario2=None):
             else:
                 dir2 = None
                 
-    elif scenario1=='obsclim' or scenario1=='counterclim':
-        if scenario1=='obsclim':
-            indir=indir_obs
-            dir1=os.path.join(indir, GCM)
-            dir2=None
-        elif scenario1=='counterclim':
-            indir=indir_counterclim
-            dir1=os.path.join(indir, GCM)
-            dir2=None
+
             
     
 
@@ -274,21 +277,23 @@ def get_filesavename(GCM, scenario1, scenario2, ext, data=None, filepath=None,st
             variable = VARs[0]
         else:
             print('variable not defined')
-            
+
+    # get filepath of output or input file
     if filepath is None:
         if variable == 'wbgt':
-            dirname='output_apr24-9139513'
-            if scenario1=='obsclim':
+            dirname='output_wbgt'
+            if scenario2 is None:
                 dir1=os.path.join(scratchdirs, dirname, 'WBGT', flags['models'], scenario1, GCM )
             else:
-                dir1=os.path.join(scratchdirs, dirname, 'WBGT', flags['models'], GCM ) # if you always change flags metric you can also replace with fxn 
+                dir1=os.path.join(scratchdirs, dirname, 'WBGT', flags['models'], scenario1+'-'+scenario2, GCM ) 
             print(dir1)
-            filepath=get_filepaths(variable.upper(),dir1)[0] # 'WBGT' not 'wbgt' in filename: possibly change for coherence
+            filepath=get_filepaths(variable.upper(),dir1)[0] # 'WBGT' not 'wbgt' in filename
         else:
             dir1, dir2 = get_dirpaths(GCM, scenario1, scenario2)
             filepath = get_filepaths(variable,dir1,dir2)[0]
 
-    
+
+    # get start and end year for saving files 
     if startyear==None:
         try:
             data.year.values
@@ -321,21 +326,22 @@ def get_filesavename(GCM, scenario1, scenario2, ext, data=None, filepath=None,st
                         except:
                             pass
         
-    if keep_scenario == False:
-        basename = os.path.basename(filepath)
-        basename1 = re.match(r'(.*?)_historical_(.*?)_\d{4}_\d{4}', basename).group(1) # get rid of end years
-        basename2 = re.match(r'(.*?)_historical_(.*?)_\d{4}_\d{4}', basename).group(2)
+    if keep_scenario == False: # DELETE this ! 
+        # basename = os.path.basename(filepath)
+        # basename1 = re.match(r'(.*?)_historical_(.*?)_\d{4}_\d{4}', basename).group(1) # get rid of end years
+        # basename2 = re.match(r'(.*?)_historical_(.*?)_\d{4}_\d{4}', basename).group(2)
         
-        if scenario2 is not None:
-            scen = f'_{scenario1}_{scenario2}'
-        else:
-            scen = f'_{scenario1}'
+        # if scenario2 is not None:
+        #     scen = f'_{scenario1}_{scenario2}'
+        # else:
+        #     scen = f'_{scenario1}'
     
-        if endyear is not None:
-            exts = '_{}_{}_{}'.format(ext, startyear, endyear) # add extension and start and end years
-        else:
-            exts = '_{}_{}'.format(ext, startyear)
-        filename = str(basename1+scen+exts+'.nc')
+        # if endyear is not None:
+        #     exts = '_{}_{}_{}'.format(ext, startyear, endyear) # add extension and start and end years
+        # else:
+        #     exts = '_{}_{}'.format(ext, startyear)
+        # filename = str(basename1+scen+exts+'.nc')
+        pass
         
     elif keep_scenario == True:
         basename = os.path.basename(filepath)

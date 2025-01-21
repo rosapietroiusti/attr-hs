@@ -18,6 +18,7 @@ import statsmodels.api as sm
 from settings import *
 
 
+
 # ---------------------------------------------------------------
 # Utils - opening files etc
 # ---------------------------------------------------------------
@@ -115,6 +116,47 @@ def get_outdir(GCM,metric,outdirname,models=flags['models']): # repetitive from 
 
 
 
+# def get_dirpaths(GCM, scenario1=None, scenario2=None):
+#     """ get directory paths for each GCM given one or two scenarios so that later you can join the files together
+#     ---------------------------------------------------------------
+#     Inputs:
+#          GCM: (str) model name
+#          scenario1: (str) first scenario e.g. historical (directory name)
+#          scenario2: (str opt) second scenario e.g. ssp370 (directory name)
+#     ---------------------------------------------------------------
+#     Returns:
+#         dir1, dir2: (str) directory paths
+#     """
+#     if GCM in GCMs or scenario1=='hist-nat':
+#         if GCM in GCMs_s or scenario1 == 'hist-nat': 
+#             indir = indir_s
+#         else: 
+#             indir = indir_p
+
+#         dir1 = os.path.join(indir, scenario1, GCM) # hist-nat goes all the way to 2100
+#         if scenario2 is not None:
+#             dir2 = os.path.join(indir, scenario2, GCM)      # secondary input models, join historical and SSP-RCP
+#         else:
+#             dir2 = None
+
+                
+#     elif scenario1=='obsclim' or scenario1=='counterclim':
+#         if scenario1=='obsclim':
+#             indir=indir_obs
+#         elif scenario1=='counterclim':
+#             indir=indir_counterclim
+        
+#         dir1=os.path.join(indir, GCM)
+#         dir2=None
+            
+
+#     if not os.path.exists(dir1) or (scenario2 is not None and not os.path.exists(dir2)):
+#         print("check your dir paths")
+            
+#     return dir1, dir2
+
+
+
 def get_dirpaths(GCM, scenario1=None, scenario2=None):
     """ get directory paths for each GCM given one or two scenarios so that later you can join the files together
     ---------------------------------------------------------------
@@ -126,33 +168,34 @@ def get_dirpaths(GCM, scenario1=None, scenario2=None):
     Returns:
         dir1, dir2: (str) directory paths
     """
-    if GCM in GCMs or scenario1=='hist-nat':
-        if GCM in GCMs_s or scenario1 == 'hist-nat': 
-            indir = indir_s
-        else: 
-            indir = indir_p
-
-        dir1 = os.path.join(indir, scenario1, GCM) # hist-nat goes all the way to 2100
-        if scenario2 is not None:
-            dir2 = os.path.join(indir, scenario2, GCM)      # secondary input models, join historical and SSP-RCP
-        else:
-            dir2 = None
-
-                
-    elif scenario1=='obsclim' or scenario1=='counterclim':
+    
+    if scenario1=='obsclim' or scenario1=='counterclim':
         if scenario1=='obsclim':
             indir=indir_obs
+            dir1=os.path.join(indir, GCM)
+            dir2=None
         elif scenario1=='counterclim':
             indir=indir_counterclim
-        
-        dir1=os.path.join(indir, GCM)
-        dir2=None
+            dir1=os.path.join(indir, GCM)
+            dir2=None
             
+    else: # if scenario1=='historical' or scenario1=='hist-nat':
+        if GCM in GCMs_s or scenario1 == 'hist-nat': 
+            indir = indir_s
+            dir1 = os.path.join(indir, scenario1, GCM) # hist-nat goes all the way to 2100
+            if scenario2 is not None:
+                dir2 = os.path.join(indir, scenario2, GCM)      # secondary input models, join historical and SSP-RCP
+            else:
+                dir2 = None
+        else: 
+            indir = indir_p
+            dir1 = os.path.join(indir, scenario1, GCM)
+            if scenario2 is not None:
+                dir2 = os.path.join(indir, scenario2, GCM)     # primary input models, join historical and ssp-rcp scenario
+            else:
+                dir2 = None
 
-    if not os.path.exists(dir1) or (scenario2 is not None and not os.path.exists(dir2)):
-        print("check your dir paths")
-            
-    return dir1, dir2
+    return dir1,dir2
 
 
 
@@ -279,10 +322,10 @@ def get_filesavename(GCM, scenario1, scenario2, ext, data=None, filepath=None,st
     if filepath is None:
         if variable == 'wbgt':
             dirname='output_wbgt' # TODO: change/fix this ! 
-            if scenario1=='obsclim':
+            if scenario2 is None:
                 dir1=os.path.join(scratchdirs, dirname, 'WBGT', flags['models'], scenario1, GCM )
             else:
-                dir1=os.path.join(scratchdirs, dirname, 'WBGT', flags['models'], 'historical-rcp370', GCM ) # if you always change flags metric you can also replace with fxn 
+                dir1=os.path.join(scratchdirs, dirname, 'WBGT', flags['models'], scenario1+'-'+scenario2, GCM ) 
             print(dir1)
             filepath=get_filepaths(variable.upper(),dir1)[0] # 'WBGT' not 'wbgt' in filename: possibly change for coherence
         else:
