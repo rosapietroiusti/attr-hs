@@ -19,8 +19,6 @@ from scipy import interpolate
 import os, glob, re, sys
 import time
 from datetime import datetime
-#import statsmodels
-#import statsmodels.api as sm # only in calc_warming_periods_models_all_years : could delete and comment out that section 
 import dask
 from dask import delayed, compute
 import dask.array as da
@@ -30,24 +28,16 @@ import netCDF4
 from settings import *
 from utils import * 
 
-# # heat stress from Schwingshackl, 2021
-# sys.path.append('../CDS_heat_stress_indicators/') # to delete once update to newt 
-# import calc_heat_stress_indicators as hsi
-
+# NEWT Tw calculation (Warren, Rogers et al., https://github.com/robwarrenwx/atmos)
 sys.path.append('../atmos/')
 from atmos import thermo
 
-# dist_cov Hauser et al, 2022
+# dist_cov (M. Hauser et al., https://github.com/mathause/dist_cov)
 sys.path.append('../dist_cov/dist_cov/')
 import distributions as distributions 
 import utils as utils 
 
 
-# Testing this!!!
-# instead of having functions_ana etc. 
-if sys.argv[1] == '-f':
-    sys.argv[2] = sys.argv[3] = 0 
-  
     
     
 """
@@ -372,7 +362,7 @@ def calc_warming_periods_models_all_years(GCMs,
                                           dir_gmst_models, 
                                           observed_warming_path,
                                           method='ar6', 
-                                          centered=False, # only relevant if method is 'centered'
+                                          centered=False, # only relevant if method is 'window'
                                           window=10,
                                           min_periods=10,
                                           flatten=False):
@@ -565,10 +555,11 @@ def open_model_data(model,
                     method='ar6',
                     match='closest', 
                     windowsize=30, 
-                    chunk_version=flags['chunk_version'], #for job submit set to 2! move this to utils ?
+                    chunk_version=flags['chunk_version'], #for job submit set to 2! 
                     variable=var,
                     startyear=None,
                     endyear=None,
+                    engine='netcdf4'
                    ): 
     """
     Open models or obs data based on window around target year (windowsize default value 30 years) 
@@ -600,6 +591,7 @@ def open_model_data(model,
         filepaths = get_filepaths(variable,dir1,dir2);  # in utils.py
         
     elif variable=='wbgt':
+        variable=variable.upper() #'WBGT' # NEWT output capital variable name
         dirname='output_jan25' # clean this!!
         # could delete this if not using this function on 3a
         if flags['models']=='ISIMIP3a':
@@ -608,6 +600,7 @@ def open_model_data(model,
         else:
             dir1=os.path.join(scratchdirs, dirname, 'WBGT', flags['models'], 'historical', model ) # if you always change flags metric you can also replace with fxn 
             dir2=os.path.join(scratchdirs, dirname, 'WBGT', flags['models'], 'ssp370', model ) # if you always change flags metric you can also replace with fxn 
+            print(dir1,dir2)
             filepaths=get_filepaths(variable.upper(),dir1,dir2) # 'WBGT' not 'wbgt' in filename: possibly change for coherence
     
     print(f'opening data for {variable}')
@@ -620,7 +613,7 @@ def open_model_data(model,
         
     
     # if you give it a target year to match in observations, by default will use ar6 10-year method with minsize=1 and find closest match
-    # and calc interval as +/- 15 years wrt central yaer. Check if you want to change any of these defaults. 
+    # and calc interval as +/- 15 years wrt central year. Check if you want to change any of these defaults. 
     elif period == 'target-year':
         if target_year is not None:
             warming_periods = calc_warming_periods_models(model, dir_gmst_models, observed_warming_path, target_year=target_year, method=method, match=match, windowsize=windowsize);
@@ -649,7 +642,7 @@ def open_model_data(model,
         else:
             print('error start and endyear not defined')
         
-    da = open_arrays_dask(filepaths, variable, startyear, endyear, version=chunk_version); # utils
+    da = open_arrays_dask(filepaths, variable, startyear, endyear, version=chunk_version, engine=engine); # utils
         
     
     if period == 'target-year' or period == 'model-year':
@@ -715,7 +708,6 @@ def calc_wbgt(GCM,
                                             startyear=startyear, 
                                             endyear=endyear, 
                                             keep_scenario=True) 
-            #TODO: fix this keep_scenario doesnt work properly saves them all as the first file in the file list so here as historical 
 
             if os.path.exists(os.path.join(scratchdir,filesavename)):
                 print(f'wbgt {i} exists')
@@ -1068,7 +1060,82 @@ def calc_percentiles_da(data, thresholds):
 
 
 
-def norm_shift_fit(da, df_cov, shift_sigma=False, by_month=False):
+# def norm_shift_fit(da, df_cov, shift_sigma=False, by_month=False):
+#     """
+#     Fit normal distribution with shift fit (varying location or location and scale) as linear functions of a covariate
+#     Fit a different model for each month of the year 
+#     Best estimates with max likelihood estimation
+#     Uses functions from dist_cov (Hauser et al, ETH) 
+    
+#     Input : 
+#     da : your data as a dataarray
+#     df_cov : your covariate as an annual dataframe
+#     shift_sigma :   False: loc = b0 + b1 * cov, scale fixed
+#                     True: loc = b0 + b1 * cov, scale = sigma_b0 + sigma_b1 * cov 
+#     by_month : Boolean, if True, fit model for each month separately
+                    
+#     Returns:
+#     DataArray with parameter names and values, and month as a coordinate if by_month is True.
+#     """
+    
+#     def fit_normal_dist(data, covariate, shift_sigma):
+#         """Fit normal distribution to data with covariate. 
+#         These functions are from dist_cov (Hauser et al., see GitHub)"""
+#         if shift_sigma:
+#             dist = distributions.norm_cov_std(data=data.astype("float32"), cov=covariate)
+#         else:
+#             dist = distributions.norm_cov(data=data.astype("float32"), cov=covariate)
+#         return dist.fit()
+    
+#     def apply_fit_to_group(da_group):
+#         """Apply the fitting function to a group of data."""
+#         t = da_group.time.dt.year
+#         cov = df_cov.loc[t.values].values.squeeze() # get covariate values for correct years
+                
+#         output_sizes = {'params': 4} if shift_sigma else {'params': 3}
+#         dask_gufunc_kwargs = {'output_sizes': output_sizes}
+
+#         result = xr.apply_ufunc(
+#             fit_normal_dist,
+#             da_group,
+#             cov,
+#             shift_sigma,
+#             input_core_dims=[['time'], ['time'], []],
+#             output_core_dims=[['params']],
+#             vectorize=True,
+#             dask='parallelized', 
+#             output_dtypes=[float],
+#             dask_gufunc_kwargs=dask_gufunc_kwargs
+#         )
+        
+#         return result
+    
+#     print('test: dask parallelized')
+    
+#     if by_month:
+#         results = []
+#         for month, group in da.groupby("time.month"):
+#             fit_result = apply_fit_to_group(group)
+#             fit_result = fit_result.expand_dims("month").assign_coords(month=("month", [month]))
+#             results.append(fit_result)
+        
+#         result = xr.concat(results, dim="month")
+#     else:
+#         result = apply_fit_to_group(da)
+
+#     # Rename params coordinates
+#     if shift_sigma:
+#         result['params'] = ["b0", "b1", "sigma_b0", "sigma_b1"]
+#     else:
+#         result['params'] = ["b0", "b1", "sigma"]
+
+#     result = result.rename('fit_params')
+    
+#     return result
+
+
+
+def norm_shift_fit(da, df_cov, shift_sigma=False, by_month=False, round_decimals=4):
     """
     Fit normal distribution with shift fit (varying location or location and scale) as linear functions of a covariate
     Fit a different model for each month of the year 
@@ -1081,6 +1148,7 @@ def norm_shift_fit(da, df_cov, shift_sigma=False, by_month=False):
     shift_sigma :   False: loc = b0 + b1 * cov, scale fixed
                     True: loc = b0 + b1 * cov, scale = sigma_b0 + sigma_b1 * cov 
     by_month : Boolean, if True, fit model for each month separately
+    round_decimals : Number of decimals to round the data array before processing. If None, no rounding is applied.
                     
     Returns:
     DataArray with parameter names and values, and month as a coordinate if by_month is True.
@@ -1088,7 +1156,7 @@ def norm_shift_fit(da, df_cov, shift_sigma=False, by_month=False):
     
     def fit_normal_dist(data, covariate, shift_sigma):
         """Fit normal distribution to data with covariate. 
-        These functions are from dist_cov (Hauser et al., see GitHub)"""
+        These functions are adapted from dist_cov (Hauser et al., see GitHub)"""
         if shift_sigma:
             dist = distributions.norm_cov_std(data=data, cov=covariate)
         else:
@@ -1097,8 +1165,12 @@ def norm_shift_fit(da, df_cov, shift_sigma=False, by_month=False):
     
     def apply_fit_to_group(da_group):
         """Apply the fitting function to a group of data."""
+        if round_decimals is not None:
+            # Combine rounding and casting
+            da_group = da_group.round(round_decimals).astype("float32")
+            
         t = da_group.time.dt.year
-        cov = df_cov.loc[t.values].values.squeeze() # get covariate values for correct years
+        cov = df_cov.loc[t.values].values.squeeze()  # get covariate values for correct years
                 
         output_sizes = {'params': 4} if shift_sigma else {'params': 3}
         dask_gufunc_kwargs = {'output_sizes': output_sizes}
@@ -1129,6 +1201,8 @@ def norm_shift_fit(da, df_cov, shift_sigma=False, by_month=False):
         
         result = xr.concat(results, dim="month")
     else:
+        if round_decimals is not None:
+            da = da.round(round_decimals)  # Round here if processing the entire array
         result = apply_fit_to_group(da)
 
     # Rename params coordinates
@@ -1140,6 +1214,7 @@ def norm_shift_fit(da, df_cov, shift_sigma=False, by_month=False):
     result = result.rename('fit_params')
     
     return result
+
 
 
 
@@ -1425,7 +1500,64 @@ def norm_shift_fit_boot(da, df_cov, shift_sigma=False, by_month=False, bootsize=
 
 
 
-def open_all_nAHD(GCMs, metric, outdirname,year_pres=2022):
+# def open_all_nAHD(GCMs, metric, outdirname,year_pres=2022):
+    
+#     method=None
+    
+#     if '99' in metric:
+#         p0=0.01
+#     elif '95' in metric:
+#         p0=0.05
+#     elif '90' in metric:
+#         p0=0.1
+#     else:
+#         method='fixed_threshold' 
+        
+#     if 'CanESM5' in GCMs: # clean this?
+#         models='ISIMIP3b'
+#     elif 'GSWP3-W5E5' in GCMs:
+#         models='ISIMIP3a'
+    
+#     da_master = None
+    
+#     for GCM in GCMs:
+#         print(GCM)
+        
+#         # open p0 
+#         if method=='fixed_threshold': 
+#             try:
+#                 filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
+#                                             outdirname=outdirname,models=models), 
+#                                     f'*{metric}_pre-industrial_returnperiod*'))[0]
+#             except:
+#                 print('p0 file not found')
+            
+#             p0 = 1 - xr.open_dataarray(filepath,  decode_times=False)
+        
+#         filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
+#                                             outdirname=outdirname,models=models), 
+#                                     f'*_{metric}_single-year*returnperiod_{year_pres}*'))[0]
+
+#         p1 = 1 - xr.open_dataarray(filepath,  decode_times=False)
+        
+#         # calc nAHD 
+#         da_nAHD = 365 * (p1 - p0)
+#         da_nAHD.name = 'number of additional days'
+#         da_nAHD = da_nAHD.assign_coords(model=GCM)
+        
+#         # concat for all GCMs
+#         if da_master is None:
+#             da_master = da_nAHD.copy()
+#         else:
+#             da_master = xr.concat([da_master, da_nAHD], dim='model')
+        
+#     return da_master
+
+
+
+
+
+def open_all_nAHD(GCMs, metric, outdirname,year_pres=None, temp_target=None):
     
     method=None
     
@@ -1436,9 +1568,9 @@ def open_all_nAHD(GCMs, metric, outdirname,year_pres=2022):
     elif '90' in metric:
         p0=0.1
     else:
-        method='fixed_threshold' 
+        method='fixed_threshold' # check this ok and i dont add any new percentile values 
         
-    if 'CanESM5' in GCMs: # clean this?
+    if 'CanESM5' in GCMs:
         models='ISIMIP3b'
     elif 'GSWP3-W5E5' in GCMs:
         models='ISIMIP3a'
@@ -1446,7 +1578,6 @@ def open_all_nAHD(GCMs, metric, outdirname,year_pres=2022):
     da_master = None
     
     for GCM in GCMs:
-        print(GCM)
         
         # open p0 
         if method=='fixed_threshold': 
@@ -1458,10 +1589,15 @@ def open_all_nAHD(GCMs, metric, outdirname,year_pres=2022):
                 print('p0 file not found')
             
             p0 = 1 - xr.open_dataarray(filepath,  decode_times=False)
-        
-        filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
+
+        if year_pres:
+            filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
                                             outdirname=outdirname,models=models), 
-                                    f'*_{metric}_single-year_returnperiod_{year_pres}*'))[0]
+                                    f'*_{metric}_single-year*returnperiod_{year_pres}*'))[0]
+        elif temp_target:
+            filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
+                                            outdirname=outdirname,models=models), 
+                                    f'*_{metric}_single-year*windowcrossed*returnperiod_{temp_target}.nc'))[0]
 
         p1 = 1 - xr.open_dataarray(filepath,  decode_times=False)
         
@@ -1479,11 +1615,7 @@ def open_all_nAHD(GCMs, metric, outdirname,year_pres=2022):
     return da_master
 
 
-
-
-
-
-def open_all_deltaI(GCMs, metric, outdirname='output_empirical',models=flags['models'],year_pres=2022): 
+def open_all_deltaI(GCMs, metric, outdirname='output_empirical',models=flags['models'],year_pres=2023): 
     
 
     da_master = None
@@ -1589,7 +1721,71 @@ def open_all_TX_preindustrial(GCMs, metric, outdirname, models=flags['models']):
     return da_master
 
 
-def open_all_p0_p1(GCMs, metric, outdirname,year_pres=2022):
+# def open_all_p0_p1(GCMs, metric, outdirname,year_pres=2022):
+    
+#     if '99' in metric:
+#         p0=0.01
+#     elif '95' in metric:
+#         p0=0.05
+#     elif '90' in metric:
+#         p0=0.1
+#     else:
+#         method='fixed_threshold' 
+    
+#     da_p0 = None
+#     da_p1 = None
+    
+#     if 'CanESM5' in GCMs: # clean this ?
+#         models='ISIMIP3b'
+#     elif 'GSWP3-W5E5' in GCMs:
+#         models='ISIMIP3a'
+    
+#     for GCM in GCMs:
+        
+#         # open p0 
+#         if method=='fixed_threshold': 
+#             try:
+#                 filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
+#                                             outdirname=outdirname, models=models), 
+#                                     f'*{metric}_pre-industrial_returnperiod*'))[0]
+#             except:
+#                 print('p0 file not found')
+            
+#             p0 = 1 - xr.open_dataarray(filepath,  decode_times=False)
+#             p0.name = 'p0'
+#             p0 = p0.assign_coords(model=GCM)
+            
+#             # concat for all GCMs
+#             if da_p0 is None:
+#                 da_p0 = p0.copy()
+#             else:
+#                 da_p0 = xr.concat([da_p0, p0], dim='model')
+        
+#         # float value if p0 fixed by def 
+#         else:
+#             da_p0 = p0 
+        
+
+#         # open p1 
+#         filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
+#                                             outdirname=outdirname, models=models), 
+#                                     f'*_{metric}_single-year*returnperiod_{year_pres}*'))[0]
+
+#         p1 = 1 - xr.open_dataarray(filepath,  decode_times=False)
+#         p1.name = 'p1'
+#         p1 = p1.assign_coords(model=GCM)
+        
+        
+#         # concat for all GCMs
+#         if da_p1 is None:
+#             da_p1 = p1.copy()
+#         else:
+#             da_p1 = xr.concat([da_p1, p1], dim='model')
+    
+    
+#     return da_p0, da_p1 
+
+def open_all_p0_p1(GCMs, metric, outdirname,year_pres=None, temp_target=None):
     
     if '99' in metric:
         p0=0.01
@@ -1598,12 +1794,12 @@ def open_all_p0_p1(GCMs, metric, outdirname,year_pres=2022):
     elif '90' in metric:
         p0=0.1
     else:
-        method='fixed_threshold' 
+        method='fixed_threshold' # check this ok and i dont add any new percentile values 
     
     da_p0 = None
     da_p1 = None
     
-    if 'CanESM5' in GCMs: # clean this ?
+    if 'CanESM5' in GCMs:
         models='ISIMIP3b'
     elif 'GSWP3-W5E5' in GCMs:
         models='ISIMIP3a'
@@ -1635,9 +1831,23 @@ def open_all_p0_p1(GCMs, metric, outdirname,year_pres=2022):
         
 
         # open p1 
-        filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
-                                            outdirname=outdirname, models=models), 
-                                    f'*_{metric}_single-year_returnperiod_{year_pres}*'))[0]
+        # try:
+        #     filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
+        #                                     outdirname=outdirname, models=models), 
+        #                             f'*percentiles_pres*_{metric}*'))[0]
+        # except:
+        # filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
+        #                                     outdirname=outdirname, models=models), 
+        #                             f'*_{metric}_single-year_returnperiod_{year_pres}*'))[0]
+
+        if year_pres:
+            filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
+                                            outdirname=outdirname,models=models), 
+                                    f'*_{metric}_single-year*returnperiod_{year_pres}*'))[0]
+        elif temp_target:
+            filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
+                                            outdirname=outdirname,models=models), 
+                                    f'*_{metric}_single-year*windowcrossed*returnperiod_{temp_target}*'))[0]
 
         p1 = 1 - xr.open_dataarray(filepath,  decode_times=False)
         p1.name = 'p1'
@@ -1652,7 +1862,6 @@ def open_all_p0_p1(GCMs, metric, outdirname,year_pres=2022):
     
     
     return da_p0, da_p1 
-
 
 
 def open_all_wbgt_summary(GCMs,
@@ -1693,7 +1902,7 @@ def open_all_wbgt_summary(GCMs,
                                         outdirname, f'WBGT/ISIMIP*/{experiment}/preprocessed/',GCM,
                                         f'*_{ext}*'))[0]
         else:
-            filepath=glob.glob(os.path.join('/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/', # clean this !! 
+            filepath=glob.glob(os.path.join('/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/',
                                         outdirname, 'WBGT/ISIMIP*/preprocessed/',GCM,
                                         f'*_{ext}*'))[0]
 
@@ -1724,9 +1933,13 @@ def calc_nAHD_shift_fit(da_params, threshold, gmst_smo,year_pres=2023,GWI=1.3):
 
     from scipy.stats import norm
 
-    gmst_pres = float(gmst_smo.loc[year_pres].iloc[0]) # take smoothed or not smoothed covariate ?? 
-    gmst_pi = float(gmst_pres - GWI)
-
+    if isinstance(gmst_smo, xr.DataArray):
+        gmst_pres = gmst_smo.loc[year_pres]# take smoothed or not smoothed covariate ?? 
+        gmst_pi = gmst_pres - GWI
+    else:
+        gmst_pres = float(gmst_smo.loc[year_pres].iloc[0])  
+        gmst_pi = float(gmst_pres - GWI)
+        
     b0 = da_params.sel(params='b0')
     b1 = da_params.sel(params='b1')
 
@@ -2041,7 +2254,7 @@ def calc_percapita_hotdays_peopledays_1yr(gs_population,
                                            ages_values=range(0,100),
                                            grouped = True,
                                            size_win = 10,
-                                          # mask_where_decr=False #should be called mask less than zero
+                                          mask_where_decr=False #should be called mask less than zero
                                            ):
     ''' calculate for each age year if grouped = False. if grouped = True then you have to specify size win (standard 18) and it will group data for 0-17... 
     - make sure to edit indexing if you change columns created in this funciton (e.g. get rid of n whrincr and prop whr incr which i think are kind of useless?)
@@ -2061,25 +2274,25 @@ def calc_percapita_hotdays_peopledays_1yr(gs_population,
 
         for i in range(len(df_out)):
             
-            # #TODO: make flag without masking where da_nAHD>0 - CHECK THIS !!!
+            #TODO: make flag without masking where da_nAHD>0 - CHECK THIS !!!
             
-            # if mask_where_decr == True: # only places where there is an increase, not where decrease, test sensitivity to this! 
-            #     # people times days
-            #     people_times_hotdays = (gs_population.isel(ages=i).where(da_nAHD>0) * da_nAHD).sum().values
-            #     df_out.loc[i,f'people_days'] = people_times_hotdays
+            if mask_where_decr == True: # only places where there is an increase, not where decrease, test sensitivity to this! 
+                # people times days
+                people_times_hotdays = (gs_population.isel(ages=i).where(da_nAHD>0) * da_nAHD).sum().values
+                df_out.loc[i,f'people_days'] = people_times_hotdays
 
-            #     # global avg days per capita 
-            #     per_capita_days = people_times_hotdays / gs_population.isel(ages=i).where(da_nAHD>0).sum().values
-            #     df_out.loc[i,f'per_capita_days'] = per_capita_days
+                # global avg days per capita 
+                per_capita_days = people_times_hotdays / gs_population.isel(ages=i).where(da_nAHD>0).sum().values
+                df_out.loc[i,f'per_capita_days'] = per_capita_days
             
-            # if mask_where_decr == False:
-            # people times days
-            people_times_hotdays = (gs_population.isel(ages=i) * da_nAHD).sum().values
-            df_out.loc[i,f'people_days'] = people_times_hotdays
-        
-            # global avg days per capita 
-            per_capita_days = people_times_hotdays / gs_population.isel(ages=i).sum().values
-            df_out.loc[i,f'per_capita_days'] = per_capita_days
+            elif mask_where_decr == False:
+                # people times days
+                people_times_hotdays = (gs_population.isel(ages=i) * da_nAHD).sum().values
+                df_out.loc[i,f'people_days'] = people_times_hotdays
+
+                # global avg days per capita 
+                per_capita_days = people_times_hotdays / gs_population.isel(ages=i).sum().values
+                df_out.loc[i,f'per_capita_days'] = per_capita_days
             
             # total people of each age 
             n_people = gs_population.isel(ages=i).sum().values

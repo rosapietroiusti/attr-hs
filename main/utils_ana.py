@@ -155,7 +155,7 @@ def get_filepaths(var,dir1,dir2=None):
 
 
 
-def open_arrays_dask(filepaths, var, startyear, endyear, version): 
+def open_arrays_dask(filepaths, var, startyear, endyear, version, engine='netcdf4'): 
     """ open multiple ncfiles defined by filepaths as a single data array and slice it to the start and endyear you want 
     
     TODO: add another function or flag-dependent thing in this function that crops only over Europe to make calcs go faster 
@@ -165,7 +165,7 @@ def open_arrays_dask(filepaths, var, startyear, endyear, version):
     
     if version == 0:
 
-        with xr.open_mfdataset(filepaths, engine='netcdf4', 
+        with xr.open_mfdataset(filepaths, engine=engine, 
                           chunks = {'lat':lat_chunk, 'lon':lon_chunk, 'time':time_chunk}
                           ) as ds:
             da = ds[str(var)].sel(time=slice('{}-01-01'.format(startyear), '{}-12-31'.format(endyear)))
@@ -177,7 +177,7 @@ def open_arrays_dask(filepaths, var, startyear, endyear, version):
         
         
     elif version == 1:
-        with xr.open_mfdataset(filepaths, engine='netcdf4', 
+        with xr.open_mfdataset(filepaths, engine=engine, 
                       chunks = 'auto'
                       ) as ds:
             da = ds[str(var)].sel(time=slice('{}-01-01'.format(startyear), '{}-12-31'.format(endyear)))
@@ -185,7 +185,7 @@ def open_arrays_dask(filepaths, var, startyear, endyear, version):
         
         
     elif version == 2:
-        with xr.open_mfdataset(filepaths, engine='netcdf4', 
+        with xr.open_mfdataset(filepaths, engine=engine, 
                       chunks = None
                       ) as ds:
             da = ds[str(var)].sel(time=slice('{}-01-01'.format(startyear), '{}-12-31'.format(endyear)))

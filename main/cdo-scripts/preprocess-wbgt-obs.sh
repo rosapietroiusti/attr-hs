@@ -48,12 +48,12 @@ var='WBGT'
 
 period='present'
 
-experiment='counterclim'
+experiment='obsclim'
 
 
 # set indir / outdir 
-inDIRs=${VSC_SCRATCH_VO_USER}/attr-hw/output/output_apr24-9139513/WBGT/ISIMIP3a/${experiment}
-outDIRs=${VSC_SCRATCH_VO_USER}/attr-hw/output/output_apr24-9139513/WBGT/ISIMIP3a/${experiment}/preprocessed
+inDIRs=${VSC_SCRATCH_VO_USER}/attr-hw/output/output_jan25/WBGT/ISIMIP3a/${experiment}
+outDIRs=${VSC_SCRATCH_VO_USER}/attr-hw/output/output_jan25/WBGT/ISIMIP3a/${experiment}/preprocessed
 
 
 

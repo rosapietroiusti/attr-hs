@@ -36,19 +36,18 @@ scratchdirs = os.path.join(os.environ['VSC_SCRATCH_VO_USER'],'attr-hw','output')
 
 flags = {}
 
-flags['models'] = 'ISIMIP3b'
+flags['models'] = 'ISIMIP3a'
                              # 'ISIMIP3b'
                              # 'ISIMIP3a' 
     
 
-flags['experiment'] = 'historical' 
+flags['experiment'] = 'obsclim' 
                                 # obsclim
-                                # counterclim
                                 # historical
-                                # ssp370, LATER: other ssps ssp126, ssp585 
+                                # ssp370, LATER: counterclim, other ssps ssp126, ssp585 (for WBGT calculate)
 
 
-flags['metric'] = ['WBGT28', 'WBGT30', 'WBGT33'][idx_settings]  
+flags['metric'] = 'WBGT' #['WBGT28', 'WBGT30', 'WBGT33'][idx_settings]  
                             # submit as job array e.g. ['WBGT90', 'WBGT95', 'WBGT99'][int(sys.argv[3])]
                             # 'WBGT' : to calculate it or run shift_fit on full distribution
                             # TX: to run shift fit 
@@ -57,51 +56,51 @@ flags['metric'] = ['WBGT28', 'WBGT30', 'WBGT33'][idx_settings]
                             # 'WBGT28', 'WBGT30', 'WBGT33'
 
                             
-flags['method'] = 'fixed_threshold'   
+flags['method'] = 'shift_fit'   
                             # calculate: to calculate WBGT 
                             # empirical_percentile: calculates return levels and periods with empirical percentiles
                             # fixed_threshold: empirical percentiles but based on a fixed magnitude threshold   - TODO:make this the same flag!! have it automatically recognized based on metric 
                             # shift_fit: fits non-stationary distribution per pixel based on dist_cov (Hauser et al)
 
-flags['time_method']=  'single-year'
+flags['time_method']=  None
                             # 'single-year' analysis on just one year or temperature level (target year in obs models are matched to!)
                             # None: if running shift fit of WBGT-calc
                 
-flags['shift_sigma'] = None
+flags['shift_sigma'] = True
                             # True = one model per month, loc and scale both vary
                             # False = one model per month, only loc varies
                             # None: if not running shift fit 
 
-flags['shift_period'] = None # [(1901, 2019),(1950, 2019)][idx_settings] # [(1901, 2019),(1950, 2019)][int(sys.argv[3])]  # [(1901, 2019),(1950, 2019)][int(sys.argv[3])] #[(1901, 2019),(1950, 2019)][int(sys.argv[2])-1]
+flags['shift_period'] = [(1901, 2019),(1950, 2019)][idx_settings]
                              # 1901, 2019
                              # 1950, 2019 
                              # None for emp percentiles or calc wbgt 
 
 flags['shift_loglike']=None 
-                            # True / False : run the shift fit with this on true !!! for CIs !! 
+                            # True / False : run the shift fit with this on true !!! for CIs !! TODO: del this, not implemented
 
             
-flags['chunk_version']=1     
+flags['chunk_version']=0     
                             # 0=specified dask chunks - best on Jup Nb (and for shift fit?)
                             # 1=auto dask chunks
                             # 2=no dask chunks - fastest on HPC for empirical percentiles
                             # all of them unchunk time 
                             # test time they take on shift fit! 
             
-target_years = 2023 
+target_years = None 
                 #[2022,2023][int(sys.argv[3])]  
                 # int e.g. 2022, 2023 - for empirical percentiles and fixed magnitude
                 # None: to calc WBGT or shift fit or target temp
 
 target_temperature = None
-                        #1.5, 2, 2.5 ... 
+                        #1.5, 2 ... other GW levels would also work 
 
         
-warming_period_method = 'ar6' 
+warming_period_method = None
                             # window, centered (for 1.5 warming)
                             # ar6 (for matching to obs years)
                             # None if not matching target temperature
-warming_period_match = 'closest' 
+warming_period_match = None
                             # 'closest' : for present-day
                             # 'crossed' : for warming levels
                             # None if not matching target temperature

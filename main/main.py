@@ -67,20 +67,9 @@ from datetime import timedelta, datetime
 from settings import *
 from functions import *
 
-dask.config.set(scheduler='processes')
-
-# maybe I only need these in functions??? TRY
-
-# heat stress package from Schwingshackl, 2021 (modified UTCI code - NOT USED UTCI IN THE END??)
-# sys.path.append('../CDS_heat_stress_indicators/')
-# import calc_heat_stress_indicators as hsi
-
-# # dist_cov package from Hauser, 2017 (modified distributions.py to add non-stationary scale paramenter) 
-# sys.path.append('../dist_cov/dist_cov/')
-# import distributions_dev as distributions
-# import utils as utils 
-
-
+# for wbgt calc and empirical pctls
+#dask.config.set(scheduler='processes')
+#print('scheduler is processes')
 
 
 # ======================
@@ -94,13 +83,13 @@ flags_run = {}
 
 flags_run['save'] = True
 
-flags_run['hist'] = True # hist+projections
+flags_run['hist'] = False # hist+projections
 
 flags_run['hist-nat'] = False    # del this later when i clean up (after review) 
 
 flags_run['calc-wbgt'] = False   # calculate the WBGT and save output in SCRATCH. 
 
-flags_run['run-pi'] = True # if you already have it saved, dont re-run it
+flags_run['run-pi'] = False # if you already have it saved, dont re-run it
 
 
 
@@ -113,20 +102,28 @@ flags_run['run-pi'] = True # if you already have it saved, dont re-run it
 
 if __name__ == '__main__':
     
-    # set up dask client
     from dask.distributed import Client
-    client = Client() #threads_per_worker=1
 
-    
-    # Configure workers
+    # shift fit TEST 
+    client = Client() 
 
-    # # calculate WBGT
+    # for emp pctl
+    # memory_limit = '200GB'  
+    #client = Client(n_workers=1, threads_per_worker=1, memory_limit=memory_limit)
+
+
+    # calculate WBGT
     # memory_limit = '200GB'  
     # client = Client(n_workers=2, threads_per_worker=1, memory_limit=memory_limit)
+
+    
+    # shift fit TEST - bad ! 
+    #memory_limit = '50GB'  
+    #client = Client(n_workers=4, threads_per_worker=1, memory_limit=memory_limit)
+    
     
     print(datetime.now(), f'client initiated \n')
     print(client)
-    print('scheduler is processes')
     
     start_message()
     
@@ -522,6 +519,7 @@ if __name__ == '__main__':
                                     variable=var,
                                     startyear=flags['shift_period'][0],
                                     endyear=flags['shift_period'][1],  
+                                     engine='h5netcdf' # testing this for HDF error thing! 
                                    ) 
                 
                 # open and smooth covariate (GMST)
@@ -531,7 +529,7 @@ if __name__ == '__main__':
                 df_cov_smo = pd.DataFrame(apply_lowess(df_cov, df_cov.index, ntime=4))
                 
    
-                print('by month, only loc')
+                
 #                 da_params = norm_shift_fit_boot(da, 
 #                                                 df_cov_smo, 
 #                                                 shift_sigma=flags['shift_sigma'], 
@@ -541,20 +539,26 @@ if __name__ == '__main__':
 #                                                 seed=0, 
 #                                                 incl_mle=True) # delete this ! 
 
+                print(f'by month, shift sigma {flags['shift_sigma']}')
+                
                 # output log-likelihood of model for CI calculation and goodness of fit 
                 if not flags['shift_loglike']:
                     da_params = norm_shift_fit(da,
                                                df_cov_smo, 
                                                shift_sigma=flags['shift_sigma'], 
                                                by_month=True)
-                    ext = metric+'_params_shift_loc_mon'
+                    if not flags['shift_sigma']:
+                        ext = metric+'_params_shift_loc_mon'
+                    else:
+                        ext = metric+'_params_shift_loc_sigma_mon' 
+                    
                 else:
                     da_params = norm_shift_fit_loglike(da,
                                                df_cov_smo, 
                                                shift_sigma=flags['shift_sigma'], 
                                                by_month=True)                
         
-                    ext = metric+'_params_shift_loc_mon_loglike' # clean up old names !! 
+                    ext = metric+'_params_shift_loc_mon_loglike' 
         
                 if flags_run['save'] == True:
                     

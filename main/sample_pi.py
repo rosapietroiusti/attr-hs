@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-import os, glob, re 
+import os, glob, re, sys 
 import xarray as xr
 import dask
 import netCDF4
@@ -9,9 +9,15 @@ import pickle
 from scipy.stats import norm
 
 # My settings and functions
-from settings_ana import *
-from functions_ana import *
-from utils_ana import * 
+# from settings_ana import *
+# from functions_ana import *
+# from utils_ana import * 
+
+print(sys.argv)
+
+from settings import *
+from functions import *
+from utils import * 
 
 def sample_from_monthly_pi_distributions(da_params,
                                          gmst_smo,
@@ -45,11 +51,31 @@ def sample_from_monthly_pi_distributions(da_params,
     # Number of samples for Monte Carlo
     n_samples = mc_samplesize
     
-    # Monte Carlo sampling function, reshaped to match the broadcasted dimensions
+    # # Monte Carlo sampling function, reshaped to match the broadcasted dimensions
+    # def monte_carlo_samples(mean, std_dev, size):
+    #     """Draw Monte Carlo samples from normal distribution."""
+    #     samples_shape = mean.shape + (size,)  
+    #     return norm.rvs(loc=mean, scale=std_dev, size=samples_shape)
+
+
+    # Monte Carlo sampling function, with NaN and invalid std_dev handling
     def monte_carlo_samples(mean, std_dev, size):
         """Draw Monte Carlo samples from normal distribution."""
-        samples_shape = mean.shape + (size,)  
-        return norm.rvs(loc=mean, scale=std_dev, size=samples_shape)
+        samples_shape = mean.shape + (size,)
+        # Handle NaNs and invalid standard deviations
+        invalid_mask = np.isnan(mean) | np.isnan(std_dev) | (std_dev <= 0)
+        samples = np.empty(samples_shape)
+        samples[:] = np.nan  # Initialize with NaNs
+        valid_mask = ~invalid_mask
+        if valid_mask.any():
+            samples[valid_mask] = norm.rvs(
+                loc=mean[valid_mask],
+                scale=std_dev[valid_mask],
+                size=samples_shape
+            )
+        return samples
+
+    
     
     # Apply Monte Carlo sampling across all grid cells
     samples_pi = xr.apply_ufunc(
@@ -58,6 +84,8 @@ def sample_from_monthly_pi_distributions(da_params,
         output_core_dims=[['samples']],  # Output will add a `samples` dimension
         vectorize=True, dask='parallelized', kwargs={'size': n_samples}
     )
+
+    
 
     return samples_pi
 
@@ -132,7 +160,7 @@ def open_params_shiftfit(datasets,
     for i in range(len(datasets)):
         dataset = datasets[i]
         if not sigma:
-            filepath = glob.glob(os.path.join(outdirs,f'output_shift-fit/forster2024/{var}/ISIMIP3a/{dataset}/*_obsclim_{var}_params_shift_loc_mon_{str(year_start)}_2019.nc'))[0] # fix name of the WBGT params that are not loglike!! 
+            filepath = glob.glob(os.path.join(outdirs,f'output_shift-fit/forster2024-lowtol-nan/{var}/ISIMIP3a/{dataset}/*_obsclim_{var}_params_shift_loc_mon_{str(year_start)}_2019.nc'))[0] # fix name of the WBGT params that are not loglike!! 
         da = xr.open_dataarray(filepath).expand_dims("dataset").assign_coords(dataset=("dataset", [dataset]))
         da_list.append(da)
         da_params = xr.concat(da_list, dim="dataset")
@@ -157,10 +185,11 @@ flags['models']='ISIMIP3a'
 dirname = 'output_shift-fit' 
 GWI=1.3
 year_start=1901 # 1901 or 1950 
-var='TX'
+var='WBGT' #'TX' or 'WBGT'
+dir_shift_fit = 'forster2024-hitol-nan'
 
 # Set output directory 
-outDIR=os.path.join(outdirs,f'output_shift-fit/forster2024/{var}/ISIMIP3a/sample_pi/GWI{str(GWI)}/')
+outDIR=os.path.join(outdirs,f'output_shift-fit/{dir_shift_fit}/{var}/ISIMIP3a/sample_pi/GWI{str(GWI)}/')
 
 # Run sampling and percentile calculation 
 if __name__ == '__main__':
