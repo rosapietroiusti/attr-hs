@@ -104,22 +104,16 @@ if __name__ == '__main__':
     
     from dask.distributed import Client
 
-    # shift fit TEST 
+    # shift fit  
     client = Client() 
 
-    # for emp pctl
+    # emp pctl
     # memory_limit = '200GB'  
     #client = Client(n_workers=1, threads_per_worker=1, memory_limit=memory_limit)
-
 
     # calculate WBGT
     # memory_limit = '200GB'  
     # client = Client(n_workers=2, threads_per_worker=1, memory_limit=memory_limit)
-
-    
-    # shift fit TEST - bad ! 
-    #memory_limit = '50GB'  
-    #client = Client(n_workers=4, threads_per_worker=1, memory_limit=memory_limit)
     
     
     print(datetime.now(), f'client initiated \n')
@@ -529,19 +523,10 @@ if __name__ == '__main__':
                 df_cov_smo = pd.DataFrame(apply_lowess(df_cov, df_cov.index, ntime=4))
                 
    
-                
-#                 da_params = norm_shift_fit_boot(da, 
-#                                                 df_cov_smo, 
-#                                                 shift_sigma=flags['shift_sigma'], 
-#                                                 by_month=True, 
-#                                                 bootsize=1, 
-#                                                 alpha=0.05, 
-#                                                 seed=0, 
-#                                                 incl_mle=True) # delete this ! 
 
-                print(f'by month, shift sigma {flags['shift_sigma']}')
+                print(f'shift fit by month')
                 
-                # output log-likelihood of model for CI calculation and goodness of fit 
+                # output log-likelihood of model for CI calculation and goodness of fit (developing)
                 if not flags['shift_loglike']:
                     da_params = norm_shift_fit(da,
                                                df_cov_smo, 

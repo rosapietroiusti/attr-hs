@@ -41,12 +41,12 @@ module load CDO/2.2.2-gompi-2023a
 
 
 # set datasets to loop over
-datasets=('empty' 'GSWP3-W5E5' '20CRv3-W5E5' '20CRv3-ERA5' )  #'20CRv3' only goes to 2015 dont do it 
+datasets=('empty' 'GSWP3-W5E5' '20CRv3-W5E5' '20CRv3-ERA5' )  
 
 # variable
 var='WBGT'
 
-period='present'
+period='pre-industrial'
 
 experiment='obsclim'
 

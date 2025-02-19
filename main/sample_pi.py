@@ -152,7 +152,8 @@ def calc_nAHD_shift_fit_percentile_from_sample(da_params,
 def open_params_shiftfit(datasets,
                          sigma=False,
                         year_start=1901,
-                         var='WBGT'
+                         var='WBGT',
+                         dir_shift_fit=None
                         ):
     
     # open shift fit parameters 
@@ -160,7 +161,7 @@ def open_params_shiftfit(datasets,
     for i in range(len(datasets)):
         dataset = datasets[i]
         if not sigma:
-            filepath = glob.glob(os.path.join(outdirs,f'output_shift-fit/forster2024-lowtol-nan/{var}/ISIMIP3a/{dataset}/*_obsclim_{var}_params_shift_loc_mon_{str(year_start)}_2019.nc'))[0] # fix name of the WBGT params that are not loglike!! 
+            filepath = glob.glob(os.path.join(outdirs,f'output_shift-fit/{dir_shift_fit}/{var}/ISIMIP3a/{dataset}/*_obsclim_{var}_params_shift_loc_mon_{str(year_start)}_2019.nc'))[0] # fix name of the WBGT params that are not loglike!! 
         da = xr.open_dataarray(filepath).expand_dims("dataset").assign_coords(dataset=("dataset", [dataset]))
         da_list.append(da)
         da_params = xr.concat(da_list, dim="dataset")
@@ -184,13 +185,17 @@ def get_smoothed_gmst(ntime=4):
 flags['models']='ISIMIP3a'
 dirname = 'output_shift-fit' 
 GWI=1.3
-year_start=1901 # 1901 or 1950 
-var='WBGT' #'TX' or 'WBGT'
+year_start=1950 # 1901 or 1950 
+var='TX' #'TX' or 'WBGT'
 dir_shift_fit = 'forster2024-hitol-nan'
 
 # Set output directory 
 outDIR=os.path.join(outdirs,f'output_shift-fit/{dir_shift_fit}/{var}/ISIMIP3a/sample_pi/GWI{str(GWI)}/')
 
+# if it doesn't exist, make it
+if not os.path.exists(outDIR):
+    os.makedirs(outdir)
+    
 # Run sampling and percentile calculation 
 if __name__ == '__main__':
     
@@ -200,7 +205,7 @@ if __name__ == '__main__':
 
     start_message()
 
-    da_params = open_params_shiftfit(datasets,year_start=year_start,var=var)
+    da_params = open_params_shiftfit(datasets,year_start=year_start,var=var, dir_shift_fit = dir_shift_fit)
 
     gmst_smo = get_smoothed_gmst()
 

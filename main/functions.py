@@ -1906,7 +1906,10 @@ def open_all_wbgt_summary(GCMs,
                                         outdirname, 'WBGT/ISIMIP*/preprocessed/',GCM,
                                         f'*_{ext}*'))[0]
 
-        da = xr.open_dataset(filepath)['wbgt']
+        try:
+            da = xr.open_dataset(filepath)['wbgt']
+        except:
+            da = xr.open_dataset(filepath)['WBGT']
         da.name = open_what
         da = da.assign_coords(model=GCM).drop_vars('time')
         
@@ -1934,7 +1937,7 @@ def calc_nAHD_shift_fit(da_params, threshold, gmst_smo,year_pres=2023,GWI=1.3):
     from scipy.stats import norm
 
     if isinstance(gmst_smo, xr.DataArray):
-        gmst_pres = gmst_smo.loc[year_pres]# take smoothed or not smoothed covariate ?? 
+        gmst_pres = gmst_smo.loc[year_pres]
         gmst_pi = gmst_pres - GWI
     else:
         gmst_pres = float(gmst_smo.loc[year_pres].iloc[0])  

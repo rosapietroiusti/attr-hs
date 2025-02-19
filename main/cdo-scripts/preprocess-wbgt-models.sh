@@ -27,8 +27,8 @@ inDIRs2=${VSC_SCRATCH_VO_USER}/attr-hw/output/output_jan25/WBGT/ISIMIP3b/ssp370
 outDIRs=${VSC_SCRATCH_VO_USER}/attr-hw/output/output_jan25/WBGT/ISIMIP3b/preprocessed
 
 # set datasets to loop over
-#datasets=('CanESM5' 'CNRM-CM6-1' 'GFDL-ESM4' 'IPSL-CM6A-LR' 'MIROC6' 'MRI-ESM2-0' ) # first round
-datasets=( 'EC-Earth3' 'UKESM1-0-LL' 'MPI-ESM1-2-HR' 'CNRM-ESM2-1' ) # second round 
+datasets=('CanESM5' 'CNRM-CM6-1' 'GFDL-ESM4' 'IPSL-CM6A-LR' 'MIROC6' 'MRI-ESM2-0' ) # first round
+#datasets=( 'EC-Earth3' 'UKESM1-0-LL' 'MPI-ESM1-2-HR' 'CNRM-ESM2-1' ) # second round 
 
 # variable
 var='WBGT'
@@ -43,42 +43,42 @@ for dataset in "${datasets[@]}"; do
 echo "Processing dataset: $dataset"
 
 
-# first round 
-# if [ $dataset = "${datasets[0]}" ]
-# then
-#     endYEARs=( 2004	2008 2009 )
-# elif [ $dataset = "${datasets[1]}" ]
-# then     
-#     endYEARs=( 2021	2021 2020 )
-# elif [ $dataset = "${datasets[2]}" ]
-# then     
-#     endYEARs=( 2029	2029 2029 )
-# elif [ $dataset = "${datasets[3]}" ]
-# then     
-#     endYEARs=( 2009	2010 2011 )
-# elif [ $dataset = "${datasets[4]}" ]
-# then     
-#     endYEARs=( 2034	2034 2033 )
-# elif [ $dataset = "${datasets[5]}" ]
-# then     
-#     endYEARs=( 2021	2022 2024 )
-# fi
-
-
-# second round 
+#first round 
 if [ $dataset = "${datasets[0]}" ]
 then
-    endYEARs=( 2013	2016 2020 )
+    endYEARs=( 2004	2008 2009 )
 elif [ $dataset = "${datasets[1]}" ]
 then     
-    endYEARs=( 2019	2021 2023 )
+    endYEARs=( 2021	2021 2020 )
 elif [ $dataset = "${datasets[2]}" ]
 then     
-    endYEARs=( 2018	2019 2021 )
+    endYEARs=( 2029	2029 2029 )
 elif [ $dataset = "${datasets[3]}" ]
 then     
-    endYEARs=( 2026	2026 2027 )
+    endYEARs=( 2009	2010 2011 )
+elif [ $dataset = "${datasets[4]}" ]
+then     
+    endYEARs=( 2034	2034 2033 )
+elif [ $dataset = "${datasets[5]}" ]
+then     
+    endYEARs=( 2021	2022 2024 )
 fi
+
+
+# # second round 
+# if [ $dataset = "${datasets[0]}" ]
+# then
+#     endYEARs=( 2013	2016 2020 )
+# elif [ $dataset = "${datasets[1]}" ]
+# then     
+#     endYEARs=( 2019	2021 2023 )
+# elif [ $dataset = "${datasets[2]}" ]
+# then     
+#     endYEARs=( 2018	2019 2021 )
+# elif [ $dataset = "${datasets[3]}" ]
+# then     
+#     endYEARs=( 2026	2026 2027 )
+# fi
 
 
 

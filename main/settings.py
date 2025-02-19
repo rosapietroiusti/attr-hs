@@ -122,8 +122,12 @@ observed_warming_path = os.path.join(datadir, 'gmst', 'gmst-obs/forster2024/deca
 observed_warming_path_annual = os.path.join(datadir, 'gmst', 'gmst-obs/forster2024/annual_averages.csv') #OLD: gmst-obs/forster2023/decadal_averages.csv
 
 # For saving with job submission 
-ver = sys.argv[1]
+#ver = sys.argv[1]
 
+#trynew
+job_id = os.getenv("SLURM_JOB_ID")  # This gives the job ID
+task_id = os.getenv("SLURM_ARRAY_TASK_ID")  # This gives the task ID within the array
+ver = f"{job_id}_{task_id}" if task_id else job_id
 
 #ISIMIP3b models 
 
