@@ -25,13 +25,13 @@ All code is in ``` main/ ```
 
 In ```settings.py```, choose between:
 
-1) Calculating indoor WBGT temperature from daily maximum temperature, daily mean pressure and daily mean specific humidity, using the NEWT algorithm
+1) Calculating indoor WBGT temperature from daily maximum temperature, daily mean pressure and daily mean specific humidity, using the NEWT algorithm.
 Set ```flags['method'] = 'calculate' ```
 
-2) Calculating present-day and pre-industrial return periods of WBGT thresholds from GCM data using empirical percentiles
+2) Calculating present-day and pre-industrial return periods of WBGT thresholds from GCM data using empirical percentiles.
 Set ```flags['method'] = 'empirical_percentile' ``` or ```fixed threshold``` 
 
-3)  Calculating present-day and pre-industrial return periods of WBGT thresholds from reanalysis data using shift fit method 
+3)  Calculating present-day and pre-industrial return periods of WBGT thresholds from reanalysis data using shift fit method. 
 Set ```flags['method'] = 'shift_fit' ``` 
 
 Set other flags and settings in ```settings.py``` and ```main.py``` according to your analysis needs. 
