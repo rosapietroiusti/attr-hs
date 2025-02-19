@@ -35,19 +35,21 @@ Visualization and analysis of processed results is done in .ipynb Jupyter notebo
 
 
 
-## Additional necessary code:
-
-Code for preprocessing of demographic data is available at: Pietroiusti et al., 2025 https://github.com/rosapietroiusti/dem4cli. 
-
-Additional code necessary for the calculation of wet bulb temperature is available at https://github.com/robwarrenwx/atmos, and for non-stationary distribution modelling at https://github.com/mathause/dist_cov (adapted for this project)
-
-
 
 ## Data availability 
 
 All data used in the analysis is publicly available: reanalysis data (https://doi.org/10.48364/ISIMIP.982724.2) and CMIP6 climate model data bias-adjusted and statistically downscaled (https://doi.org/10.48364/ISIMIP.842396.1) are available through the ISIMIP data repository. Indoor WBGT data produced in this analysis will also be made available in the ISIMIP data repository.
 
 Gridded population reconstructions (https://doi.org/10.48364/ISIMIP.889136.2) and projections (DOI missing!) are also available through the ISIMIP data repository. Country masks are available via ISIpedia (https://github.com/ISI-MIP/isipedia-countries). Cohort size data is available from the Wittgenstein Center Data Explorer v2 (http://dataexplorer.wittgensteincentre.org/wcde-v2/). SSP-RCP pathways are available through the AR6 scenario explorer hosted by IIASA (https://data.ece.iiasa.ac.at/ar6)  
+
+
+
+## Additional necessary code:
+
+Code for preprocessing of demographic data is available at *dem4cli*, Pietroiusti et al., 2025 https://github.com/rosapietroiusti/dem4cli. 
+
+Additional code necessary for the calculation of wet bulb temperature is available at https://github.com/robwarrenwx/atmos, and for non-stationary distribution modelling at https://github.com/mathause/dist_cov (adapted for this project)
+
 
 
 
