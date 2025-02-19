@@ -2,7 +2,7 @@
 Attributable heat stress functions
 
 rosapietroiusti@vub.be
-Last update: September 2024
+Last update: Jan 2025
 
 to check:
 - terminology ecdf object ok? 
@@ -19,25 +19,25 @@ from scipy import interpolate
 import os, glob, re, sys
 import time
 from datetime import datetime
-import statsmodels
-import statsmodels.api as sm
 import dask
 from dask import delayed, compute
+import dask.array as da
 import netCDF4
 
 # import my variables and util functions
 from settings import *
 from utils import * 
 
-# heat stress from Schwingshackl, 2021
-sys.path.append('../CDS_heat_stress_indicators/')
-import calc_heat_stress_indicators as hsi
+# NEWT Tw calculation (Warren, Rogers et al., https://github.com/robwarrenwx/atmos)
+sys.path.append('../atmos/')
+from atmos import thermo
 
-# dist_cov Hauser et al, 2022
+# dist_cov (M. Hauser et al., https://github.com/mathause/dist_cov)
 sys.path.append('../dist_cov/dist_cov/')
 import distributions as distributions 
 import utils as utils 
-  
+
+
     
     
 """
@@ -177,192 +177,13 @@ def get_gmst_smo(ntime=4, observed_warming_path=observed_warming_path_annual):
     
     return gmst_smo
     
-# def calc_warming_periods_models_all_years(GCMs, 
-#                                           dir_gmst_models, 
-#                                           observed_warming_path,
-#                                           method='ar6', 
-#                                           window=10,
-#                                           min_periods=10,
-#                                           flatten=False):
-
-    
-#     """
-#     Calculates when warming level from observations is reached in models, outputs central year in model timeseries. 
-    
-#     ----
-#     TODO: check that this kind of GMT remapping is ok, cfr. with Luke's
-#     clean up this function 
-#     ----
-
-#     Inputs:
-#         dir_gmst_models: (str) directory of model gmst time series 
-#         observed_warming_path: (str) filepath to forster obs warming data (important! decadal for ar6, annual for 30-yr)
-#         GCMs: (list of str) list of model names
-#         methods:    'ar6' :    end of 10-year average (Forster et al. AR6 method)
-#                     'window' : end of average of number of years you decide
-#                     'sr15' :  add 14 years to obs data by creating OLS on last 15 years, 
-#                                and match central year of 30-year average (Forster et al. approx. SR1.5 method)
-#     Returns:
-#         df_out: (df) if flatten==True
-#                     columns: year, temp_obs, year_{model}, temp_{model} for each model in GCMs
-#         OR
-#         da_out: (da) if flatten==False:
-#                     with coords year (year in obs), model (obs or GCMs), feature (year_mod or temp)
-                    
-#     """
-    
-        
-#     if method=='ar6':
-        
-#         window=10
-#         centered=False
-        
-#         # obs
-#         df_obs = pd.read_csv(observed_warming_path).rename(
-#             columns={'timebound_upper':'year'}).set_index(
-#             'year')[['gmst']]
-        
-#         df_obs.index = df_obs.index - 1 # 1860-2023 is actually 1859-2022
-#                                         # the upper timebound is excluded so add -1 to 
-#                                         # index to get correct value 
-#                                         # e.g. 2013-2023 (excl) = 2013-2022 (incl) = 1.15 degC (val in paper)
-
-#     elif method=='window':
-        
-#         centered=False
-        
-#         # obs
-#         df_obs = pd.read_csv(observed_warming_path).rename(
-#             columns={'timebound_upper':'year'}).set_index(
-#             'year')[['gmst']].rolling(window, min_periods=min_periods, center=centered).mean().dropna() 
-        
-#         df_obs.index = df_obs.index - 1 # 1860-2023 is actually 1859-2022
-#                                         # the upper timebound is excluded so add -1 to 
-#                                         # index to get correct value 
-#                                         # e.g. 2013-2023 (excl) = 2013-2022 (incl) = 1.15 degC (val in paper)
-                    
-    
-#     # for sensitivity test 
-#     elif method=='sr15':
-#         # extend obs for 15 last years
-#         def fit_trend(data, var):
-#             x=data.index
-#             y=data[var]
-#             fit=sm.OLS(y, sm.add_constant(x)).fit()    
-            
-#             return fit, x, y
-
-#         window=30
-#         centered=True
-        
-#         # extend obs for 15 last years
-#         df_obs = pd.read_csv(observed_warming_path).rename(
-#             columns={'timebound_upper':'year'}).set_index(
-#             'year')[['gmst']]
-        
-#         # fit linear regression and predict for next 15 years
-#         fit, x, y = fit_trend(df_obs[-15:], 'gmst')
-#         x_fut = np.arange(df_obs.index[-1]+1,df_obs.index[-1]+14)
-#         x_fut = sm.add_constant(x_fut)
-#         predictions = fit.predict(x_fut)
-        
-#         # add to previous df
-#         df_obs =  pd.concat([df_obs, pd.DataFrame({'year':x_fut[:,1].astype(int), 'gmst': predictions}).set_index('year')])
-        
-#         # 30 year rolling mean of obs 
-#         df_obs = df_obs.rolling(window, min_periods=min_periods, center=centered).mean().dropna() 
-        
-#     else:
-#         print('error method not defined')
-    
-    
-    
-#     # open modelled gmst annual 
-#     df_gmst_mod = merge_model_gmst(GCMs, dir_gmst_models)
-
-#     # models rolling mean  
-#     df = df_gmst_mod.rolling(window, min_periods=min_periods, center=centered).mean().dropna() 
-
-    
-#     # initiate empty data array 
-#     # create empty arrays for year, model, and feature
-#     years = df_obs.index
-#     models = ['obs'] + df.columns.tolist()  # Add 'obs' to the beginning
-#     features = ['year_mod', 'temp']
-
-#     # Create a MultiIndex for the coordinates
-#     coords = {
-#         'year': years,
-#         'model': models,
-#         'feature': features
-#     }
-
-#     # Create an empty DataArray with the specified coordinates
-#     da_out = xr.DataArray(
-#         data=None,  # Provide your data here
-#         coords=coords,
-#         dims=('year', 'model', 'feature')
-#     )
-
-#     # add observational info 
-#     da_out.loc[{'model': 'obs', 'feature':'year_mod'}] =  df_obs.index
-#     da_out.loc[{'model': 'obs', 'feature':'temp'}] =  df_obs.gmst.values
-
-#     # loop over models
-#     for i in df.columns.values:
-
-#         model_years = []
-#         model_temps = []
-
-#         # loop over years
-#         for year in years:
-#             # get target year value
-#             val = df_obs.loc[year].values[0] # value for single year. 
-
-
-#             # find closest year and temperature
-#             df_closest = df[i].iloc[(df[i]-val).abs().argsort()[:1]]
-#             model_y = df_closest.index.values[0]
-#             model_t = df_closest.values[0]
-#             # append to list 
-#             model_years.append(model_y)
-#             model_temps.append(model_t)
-
-#         # assign data to da 
-#         da_out.loc[{'model': i, 'feature':'year_mod'}] =  np.array(model_years)
-#         da_out.loc[{'model': i, 'feature':'temp'}] =  np.array(model_temps)
-    
-#     # return a data array
-#     if flatten == False:
-        
-#         return da_out
-    
-#     # return a dataframe
-#     elif flatten == True:
-        
-#         df_master = None
-        
-#         # loop over models
-#         for i in da_out.model.values:
-            
-#             df_add = da_out.sel(model=i).to_pandas().rename(columns={"year_mod": "year"})
-#             if df_master is None:
-#                 df_master = df_add 
-#             else:
-#                 df_master = df_master.merge(df_add, suffixes=(f'', f'_{i}'), left_index=True, right_index=True)
-
-#         df_master = df_master.drop(columns=["year"]).rename(columns={"temp": "temp_obs"}) 
-        
-#         df_out = df_master
-        
-#         return df_out
 
 
 def calc_warming_periods_models_all_years(GCMs, 
                                           dir_gmst_models, 
                                           observed_warming_path,
                                           method='ar6', 
-                                          centered=False, # only relevant if method is 'centered'
+                                          centered=False, # only relevant if method is 'window'
                                           window=10,
                                           min_periods=10,
                                           flatten=False):
@@ -555,10 +376,11 @@ def open_model_data(model,
                     method='ar6',
                     match='closest', 
                     windowsize=30, 
-                    chunk_version=flags['chunk_version'], #for job submit set to 2! move this to utils ?
+                    chunk_version=flags['chunk_version'], #for job submit set to 2! 
                     variable=var,
                     startyear=None,
                     endyear=None,
+                    engine='netcdf4'
                    ): 
     """
     Open models or obs data based on window around target year (windowsize default value 30 years) 
@@ -590,13 +412,17 @@ def open_model_data(model,
         filepaths = get_filepaths(variable,dir1,dir2);  # in utils.py
         
     elif variable=='wbgt':
-        dirname='output_wbgt' # clean this!!
+        variable=variable.upper() #'WBGT' # NEWT output capital variable name
+        dirname='output_jan25' # clean this!!
         # could delete this if not using this function on 3a
         if flags['models']=='ISIMIP3a':
             dir1=os.path.join(scratchdirs, dirname, 'WBGT', flags['models'], scenario1, model )
+            filepaths=get_filepaths(variable.upper(),dir1)
         else:
-            dir1=os.path.join(scratchdirs, dirname, 'WBGT', flags['models'], 'historical-rcp370', model ) # if you always change flags metric you can also replace with fxn 
-        filepaths=get_filepaths(variable.upper(),dir1) # 'WBGT' not 'wbgt' in filename: possibly change for coherence
+            dir1=os.path.join(scratchdirs, dirname, 'WBGT', flags['models'], 'historical', model ) # if you always change flags metric you can also replace with fxn 
+            dir2=os.path.join(scratchdirs, dirname, 'WBGT', flags['models'], 'ssp370', model ) # if you always change flags metric you can also replace with fxn 
+            print(dir1,dir2)
+            filepaths=get_filepaths(variable.upper(),dir1,dir2) # 'WBGT' not 'wbgt' in filename: possibly change for coherence
     
     print(f'opening data for {variable}')
     
@@ -608,7 +434,7 @@ def open_model_data(model,
         
     
     # if you give it a target year to match in observations, by default will use ar6 10-year method with minsize=1 and find closest match
-    # and calc interval as +/- 15 years wrt central yaer. Check if you want to change any of these defaults. 
+    # and calc interval as +/- 15 years wrt central year. Check if you want to change any of these defaults. 
     elif period == 'target-year':
         if target_year is not None:
             warming_periods = calc_warming_periods_models(model, dir_gmst_models, observed_warming_path, target_year=target_year, method=method, match=match, windowsize=windowsize);
@@ -637,7 +463,7 @@ def open_model_data(model,
         else:
             print('error start and endyear not defined')
         
-    da = open_arrays_dask(filepaths, variable, startyear, endyear, version=chunk_version); # utils
+    da = open_arrays_dask(filepaths, variable, startyear, endyear, version=chunk_version, engine=engine); # utils
         
     
     if period == 'target-year' or period == 'model-year':
@@ -666,11 +492,11 @@ def calc_wbgt(GCM,
                 scenario2=None,  
                 chunk_version=2, 
                 variables=None, # VARs
-                startyear=None, # find a way to code this in !! for now does all years 1850-2100
-                endyear=None, # find a way to code this in !!
+                #startyear=None, # find a way to code this in !! for now does all years 1850-2100
+                #endyear=None, # find a way to code this in !!
                 save=True,
                 overwrite=False,
-                outdirname=None): #'output_apr24-9110516'
+                outdirname=None): 
     
     dir1, dir2 = get_dirpaths(GCM, scenario1, scenario2); # in utils, gets all the years! 
 
@@ -678,11 +504,16 @@ def calc_wbgt(GCM,
     
     filepaths = [get_filepaths(VAR,dir1,dir2) for VAR in variables]  # in utils
 
+    if scenario2 is None:
+        experiment=scenario1
+    else:
+        experiment=scenario1+'-'+scenario2
+
     scratchdir =  make_outdir(GCM, 
                               makedirs=True, 
                               scratchdir=True,
                               outdirname=outdirname,
-                             experiment=scenario1) # utils
+                             experiment=experiment) # utils
 
     for i in range(len(filepaths[0])):
         print(i)
@@ -698,7 +529,6 @@ def calc_wbgt(GCM,
                                             startyear=startyear, 
                                             endyear=endyear, 
                                             keep_scenario=True) 
-            #TODO: fix this keep_scenario doesnt work properly saves them all as the first file in the file list so here as historical 
 
             if os.path.exists(os.path.join(scratchdir,filesavename)):
                 print(f'wbgt {i} exists')
@@ -727,10 +557,112 @@ def calc_wbgt(GCM,
                 print(f'wbgt {i} calculated and saved')
     
     
+
+
+""" 
+New version with NEWT
+
+"""
     
+
+
+
+
+def calc_wbgt_newt(GCM, 
+                scenario1, 
+                scenario2=None,  
+                variables=None,
+                save=True,
+                overwrite=False,
+                outdirname=None): 
+
+    def calc_wet_bulb(ps_chunk, tasmax_chunk, huss_chunk):
+        return thermo.wet_bulb_temperature(ps_chunk, tasmax_chunk, huss_chunk, saturation='pseudo')
+
+    # input directory and input files
+    print(f'calculating Tw and WBGT for {GCM} {scenario1}')
+    dir1, dir2 = get_dirpaths(GCM, scenario1, scenario2); # utils
+    print('input dir:', dir1)
+    filepaths = [get_filepaths(VAR,dir1,dir2) for VAR in variables]  # utils
+
+    if scenario2 is None:
+        experiment=scenario1
+    else:
+        experiment=scenario1+'-'+scenario2 # TODO: delete this option and run only one scenario at a time? to make separate folders
+
+    # make output directory in scratch  
+    scratchdir =  make_outdir(GCM, 
+                              makedirs=True, 
+                              scratchdir=True,
+                              outdirname=outdirname,
+                             experiment=experiment) # utils
+
+    for i in range(len(filepaths[0])):
+        print(i)
+
+        # check if output file already exists
+        if overwrite==False and save==True:
+
+            startyear,endyear = xr.open_dataarray(filepaths[0][i]).time.dt.year[[0,-1]]
+            filesavename = get_filesavename(GCM, 
+                                            scenario1,
+                                            scenario2, 
+                                            ext='WBGT', 
+                                            startyear=startyear.values, 
+                                            endyear=endyear.values, 
+                                            keep_scenario=True,
+                                           variable='tasmax') # get basename from input file, not from output WBGT file  
+
+            if os.path.exists(os.path.join(scratchdir,filesavename)):
+                print(f'wbgt {i} exists')
+                exists=True
+            else:
+                exists=False 
+
+        if overwrite==True or exists==False:
+            print(f'calculating tw and wbgt {i}')
     
+            # open variables 
+            tasmax,huss,ps= [xr.open_dataarray(files[i], engine="h5netcdf").chunk({"lat": lat_chunk, "lon": lon_chunk }).astype(float) for files in filepaths]
+
+            # "time": 30,
+            # .chunk({"lat": lat_chunk, "lon": lon_chunk })
+            
+            # check units
+            if not (tasmax.attrs['units'] == 'K' and 
+                    huss.attrs['units'] == 'kg kg-1' and 
+                    ps.attrs['units'] == 'Pa'):
+                raise ValueError("Units are incorrect")
+            
+            # calculate wet bulb temperature (K) 
+            Tw = da.map_blocks(calc_wet_bulb, ps, tasmax, huss, dtype=float)
+            #Tw_compute = Tw.compute()
+            Tw_da = xr.DataArray(Tw.compute(), coords=[ ('time', tasmax.time.values), ('lat', tasmax.lat.values), ('lon',tasmax.lon.values)], name="Wet Bulb Temperature") 
     
-    
+            # calculate wet bulb globe temperature (deg C) 
+            WBGT = (0.7*Tw_da + 0.3*tasmax).compute() - 273.15
+            
+            if save==True:
+                filesavename = get_filesavename(GCM, scenario1,scenario2, ext='Tw', data=Tw_da,variable='tasmax',keep_scenario=True)
+                Tw_da.attrs['units'] = 'K'
+                Tw_da.rename('Tw').to_netcdf(os.path.join(scratchdir, filesavename))
+                print(f'Tw {i} calculated and saved')
+            
+                filesavename = get_filesavename(GCM, scenario1,scenario2, ext='WBGT', data=WBGT,variable='tasmax', keep_scenario=True)
+                WBGT.attrs['units'] = 'C'
+                WBGT.rename('WBGT').to_netcdf(os.path.join(scratchdir, filesavename))
+                print(f'wbgt {i} calculated and saved')
+
+            del tasmax, huss, ps, Tw, Tw_da, WBGT #Tw_compute,
+
+
+
+
+
+
+
+
+
 
 
 """
@@ -820,56 +752,9 @@ def calc_percentiles_da(data, thresholds):
 
 
 
-# def norm_shift_fit_1D(da, df_cov, shift_sigma=False):
-#     """
-#     Fit normal distribution with shift fit (varying location or location and scale) as linear functions of a covariate
-#     Fit a different model for each month of the year 
-#     Best estimates with max likelihood estimation
-#     Uses fxns from dist_cov (Hauser et al, ETH) 
-    
-#     Input : 
-    
-#     da : your data as a dataarray (1D)
-#     df_cov : your covariate as an annual dataframe
-#     shift_sigma :   False: loc = b0 +b1*cov, scale fixed
-#                     True: loc = b0 +b1*cov, scale = sigma_b0 + sigma_b1*cov 
-                    
-#     Returns:
-    
-#     param names, param values  
-                
-#     """
-    
-#     arr_params = []
-    
-#     # loop over months
-#     for j in range(1,13):
-        
-#         da_sel = da.sel(time=da['time.month'].isin([j]))
-        
-#         x = da_sel.values
-#         t = da_sel.time.dt.year
-#         cov = df_cov.loc[t.values].values.squeeze()
-
-#         if shift_sigma==False:
-            
-#             dist = distributions.norm_cov(data=x, cov=cov)
-            
-#         else: 
-            
-#             dist = distributions.norm_cov_std(data=x, cov=cov)
-        
-#         params_mle = dist.fit()
-            
-#         arr_params.append(params_mle)
-    
-#     return dist.param_names, np.array(arr_params)
-
-# # group by month then ufunc on the grouped data array 
 
 
-
-def norm_shift_fit(da, df_cov, shift_sigma=False, by_month=False):
+def norm_shift_fit(da, df_cov, shift_sigma=False, by_month=False, round_decimals=4):
     """
     Fit normal distribution with shift fit (varying location or location and scale) as linear functions of a covariate
     Fit a different model for each month of the year 
@@ -882,6 +767,7 @@ def norm_shift_fit(da, df_cov, shift_sigma=False, by_month=False):
     shift_sigma :   False: loc = b0 + b1 * cov, scale fixed
                     True: loc = b0 + b1 * cov, scale = sigma_b0 + sigma_b1 * cov 
     by_month : Boolean, if True, fit model for each month separately
+    round_decimals : Number of decimals to round the data array before processing. If None, no rounding is applied.
                     
     Returns:
     DataArray with parameter names and values, and month as a coordinate if by_month is True.
@@ -889,7 +775,7 @@ def norm_shift_fit(da, df_cov, shift_sigma=False, by_month=False):
     
     def fit_normal_dist(data, covariate, shift_sigma):
         """Fit normal distribution to data with covariate. 
-        These functions are from dist_cov (Hauser et al., see GitHub)"""
+        These functions are adapted from dist_cov (Hauser et al., see GitHub)"""
         if shift_sigma:
             dist = distributions.norm_cov_std(data=data, cov=covariate)
         else:
@@ -898,8 +784,12 @@ def norm_shift_fit(da, df_cov, shift_sigma=False, by_month=False):
     
     def apply_fit_to_group(da_group):
         """Apply the fitting function to a group of data."""
+        if round_decimals is not None:
+            # Combine rounding and casting
+            da_group = da_group.round(round_decimals).astype("float32")
+            
         t = da_group.time.dt.year
-        cov = df_cov.loc[t.values].values.squeeze() # get covariate values for correct years
+        cov = df_cov.loc[t.values].values.squeeze()  # get covariate values for correct years
                 
         output_sizes = {'params': 4} if shift_sigma else {'params': 3}
         dask_gufunc_kwargs = {'output_sizes': output_sizes}
@@ -930,6 +820,8 @@ def norm_shift_fit(da, df_cov, shift_sigma=False, by_month=False):
         
         result = xr.concat(results, dim="month")
     else:
+        if round_decimals is not None:
+            da = da.round(round_decimals)  # Round here if processing the entire array
         result = apply_fit_to_group(da)
 
     # Rename params coordinates
@@ -941,6 +833,7 @@ def norm_shift_fit(da, df_cov, shift_sigma=False, by_month=False):
     result = result.rename('fit_params')
     
     return result
+
 
 
 
@@ -1115,90 +1008,6 @@ def norm_shift_fit_boot(da, df_cov, shift_sigma=False, by_month=False, bootsize=
 
 
 
-# # # Test with Dask parallelizing !! 
-
-# def norm_shift_fit_boot(da, df_cov, shift_sigma=False, by_month=False, bootsize=3, alpha=0.05, seed=0, incl_mle=True):
-#     """ Apply normal distribution with shift fit from dist_cov on xarray DataArray with bootstrap.
-#     Outputs confidence intervals and median if alpha is a float (0-1).
-#     Outputs full bootstrap sample if alpha = None
-    
-#     Inputs
-    
-#     da :          DataArray
-#     df_cov :      df, covariate for fit 
-#     shift_sigma:  Bool, if False loc changes scale is fixed, if True also scale changes
-#     by_month :    Bool, False one model for full year, True one model per month
-#     bootsize:     int, number of bootstrap sample
-#     alpha :       0-1 float, confidence level to calculate CI of parameters
-#     seed :        for np.random.seed
-#     incl_mle :    Bool, if alpha is specified will return best estimate from MLE
-    
-#     Returns
-    
-#     result : DataArray with dims 
-#                             lon, lat
-#                             params (b0,b1,sigma or sigma_b0,sigma_b1)
-#                             month (optional)
-#                             boot (full sample) or quantile (calculated from boot)
-    
-#     """
-     
-#     print('test: boot parallel')
-
-#     def boot(da):
-#         """ Resample with replacement, note: resamples YEARS. """
-#         years = np.unique(da.time.dt.year)
-#         years_smp = np.sort(np.random.choice(years, len(years), replace=True))
-        
-#         # create new time index based on randomly sampled years
-#         times = []
-#         for year in years_smp:
-#             times.extend(da.time.sel(time=da.time.dt.year == year).values)
-#         times = np.array(times)
-        
-#         # Reindex da based on the new time index
-#         da_boot = da.reindex(time=times)
-#         return da_boot
-    
-#     # set a seed for reproducibility 
-#     np.random.seed(seed)
-    
-    
-    
-    
-#     # Delayed execution for parallel computation
-#     tasks = []
-    
-#     for i in range(bootsize):
-#         da_boot = boot(da)
-#         task = delayed(norm_shift_fit)(da_boot, df_cov, shift_sigma=shift_sigma, by_month=by_month)
-#         task = delayed(task.expand_dims)("boot").assign_coords(boot=("boot", [i]))
-#         tasks.append(task)
-    
-#     results = compute(*tasks)
-    
-#     result = xr.concat(results, dim="boot")
-    
-#     # if alpha is specified calculate confidence interval, if alpha=None return full sample
-#     if alpha:
-#         result = result.chunk({"boot": -1}).quantile([alpha/2, 0.5, 1 - (alpha/2)], dim='boot')
-        
-#         # include MLE best estimate 
-#         if incl_mle:
-#             params_mle = norm_shift_fit(da, df_cov, shift_sigma=shift_sigma, by_month=by_month)
-#             result = xr.concat([params_mle.expand_dims("quantile").assign_coords(quantile=("quantile", ['mle'])), result], dim='quantile')
-    
-#     return result
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1226,7 +1035,10 @@ def norm_shift_fit_boot(da, df_cov, shift_sigma=False, by_month=False, bootsize=
 
 
 
-def open_all_nAHD(GCMs, metric, outdirname,year_pres=2022):
+
+
+
+def open_all_nAHD(GCMs, metric, outdirname,year_pres=None, temp_target=None):
     
     method=None
     
@@ -1237,9 +1049,9 @@ def open_all_nAHD(GCMs, metric, outdirname,year_pres=2022):
     elif '90' in metric:
         p0=0.1
     else:
-        method='fixed_threshold' 
+        method='fixed_threshold' # check this ok and i dont add any new percentile values 
         
-    if 'CanESM5' in GCMs: # clean this?
+    if 'CanESM5' in GCMs:
         models='ISIMIP3b'
     elif 'GSWP3-W5E5' in GCMs:
         models='ISIMIP3a'
@@ -1247,7 +1059,6 @@ def open_all_nAHD(GCMs, metric, outdirname,year_pres=2022):
     da_master = None
     
     for GCM in GCMs:
-        print(GCM)
         
         # open p0 
         if method=='fixed_threshold': 
@@ -1259,10 +1070,15 @@ def open_all_nAHD(GCMs, metric, outdirname,year_pres=2022):
                 print('p0 file not found')
             
             p0 = 1 - xr.open_dataarray(filepath,  decode_times=False)
-        
-        filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
+
+        if year_pres:
+            filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
                                             outdirname=outdirname,models=models), 
-                                    f'*_{metric}_single-year_returnperiod_{year_pres}*'))[0]
+                                    f'*_{metric}_single-year*returnperiod_{year_pres}*'))[0]
+        elif temp_target:
+            filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
+                                            outdirname=outdirname,models=models), 
+                                    f'*_{metric}_single-year*windowcrossed*returnperiod_{temp_target}.nc'))[0]
 
         p1 = 1 - xr.open_dataarray(filepath,  decode_times=False)
         
@@ -1280,11 +1096,7 @@ def open_all_nAHD(GCMs, metric, outdirname,year_pres=2022):
     return da_master
 
 
-
-
-
-
-def open_all_deltaI(GCMs, metric, outdirname='output_empirical',models=flags['models'],year_pres=2022): 
+def open_all_deltaI(GCMs, metric, outdirname='output_empirical',models=flags['models'],year_pres=2023): 
     
 
     da_master = None
@@ -1390,7 +1202,9 @@ def open_all_TX_preindustrial(GCMs, metric, outdirname, models=flags['models']):
     return da_master
 
 
-def open_all_p0_p1(GCMs, metric, outdirname,year_pres=2022):
+
+
+def open_all_p0_p1(GCMs, metric, outdirname,year_pres=None, temp_target=None):
     
     if '99' in metric:
         p0=0.01
@@ -1399,12 +1213,12 @@ def open_all_p0_p1(GCMs, metric, outdirname,year_pres=2022):
     elif '90' in metric:
         p0=0.1
     else:
-        method='fixed_threshold' 
+        method='fixed_threshold' # check this ok and i dont add any new percentile values 
     
     da_p0 = None
     da_p1 = None
     
-    if 'CanESM5' in GCMs: # clean this ?
+    if 'CanESM5' in GCMs:
         models='ISIMIP3b'
     elif 'GSWP3-W5E5' in GCMs:
         models='ISIMIP3a'
@@ -1435,10 +1249,14 @@ def open_all_p0_p1(GCMs, metric, outdirname,year_pres=2022):
             da_p0 = p0 
         
 
-        # open p1 
-        filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
-                                            outdirname=outdirname, models=models), 
-                                    f'*_{metric}_single-year_returnperiod_{year_pres}*'))[0]
+        if year_pres:
+            filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
+                                            outdirname=outdirname,models=models), 
+                                    f'*_{metric}_single-year*returnperiod_{year_pres}*'))[0]
+        elif temp_target:
+            filepath = glob.glob(os.path.join(get_outdir(GCM,metric=metric, 
+                                            outdirname=outdirname,models=models), 
+                                    f'*_{metric}_single-year*windowcrossed*returnperiod_{temp_target}*'))[0]
 
         p1 = 1 - xr.open_dataarray(filepath,  decode_times=False)
         p1.name = 'p1'
@@ -1453,7 +1271,6 @@ def open_all_p0_p1(GCMs, metric, outdirname,year_pres=2022):
     
     
     return da_p0, da_p1 
-
 
 
 def open_all_wbgt_summary(GCMs,
@@ -1494,11 +1311,14 @@ def open_all_wbgt_summary(GCMs,
                                         outdirname, f'WBGT/ISIMIP*/{experiment}/preprocessed/',GCM,
                                         f'*_{ext}*'))[0]
         else:
-            filepath=glob.glob(os.path.join('/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/', # clean this !! 
+            filepath=glob.glob(os.path.join('/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/',
                                         outdirname, 'WBGT/ISIMIP*/preprocessed/',GCM,
                                         f'*_{ext}*'))[0]
 
-        da = xr.open_dataset(filepath)['wbgt']
+        try:
+            da = xr.open_dataset(filepath)['wbgt']
+        except:
+            da = xr.open_dataset(filepath)['WBGT']
         da.name = open_what
         da = da.assign_coords(model=GCM).drop_vars('time')
         
@@ -1525,9 +1345,13 @@ def calc_nAHD_shift_fit(da_params, threshold, gmst_smo,year_pres=2023,GWI=1.3):
 
     from scipy.stats import norm
 
-    gmst_pres = float(gmst_smo.loc[year_pres].iloc[0]) # take smoothed or not smoothed covariate ?? 
-    gmst_pi = float(gmst_pres - GWI)
-
+    if isinstance(gmst_smo, xr.DataArray):
+        gmst_pres = gmst_smo.loc[year_pres]
+        gmst_pi = gmst_pres - GWI
+    else:
+        gmst_pres = float(gmst_smo.loc[year_pres].iloc[0])  
+        gmst_pi = float(gmst_pres - GWI)
+        
     b0 = da_params.sel(params='b0')
     b1 = da_params.sel(params='b1')
 
@@ -1636,55 +1460,7 @@ def calc_number_proportion_people_atleastxdays_10yr(gs_population,
 
 
 
-# def calc_number_proportion_people_atleastPR_10yr(gs_population, 
-#                                                  GCMs, 
-#                                                  da_PR,  
-#                                                  PR_thresholds = [1,2,4,8,20]):
-#     # see previous version in -exposure (PR)
-    
-#     # Group the data by age ranges and calculate the sum
-#     age_ranges = np.arange(0, 105, 10) #0-9 ... 90-99
-#     grouped_data = gs_population.groupby_bins('ages', age_ranges, right=False).sum() # right boundary excluded i.e. [0,9)
-    
-#     # initiate empty dataarray 
-#     da_master = None
-    
-#     for GCM in GCMs:
-#         # initiate empty dataframe
-#         columns = {f'n_atleast_{x}': np.nan for x in PR_thresholds}
-#         columns.update({f'prop_atleast_{x}': np.nan for x in PR_thresholds})
-#         df_out = pd.DataFrame(index=age_ranges[:-1], columns=columns)
-        
-#         # open da_model
-#         da_PR_mod = da_PR.sel(model=GCM)
-        
-#         # calculate - loop over each age bin and each threshold 
-#         for i in range(len(grouped_data.ages_bins)):
-#             for x in PR_thresholds:
 
-#                 # number of people living through at least x heatwaves 
-#                 n_people_at_least_x = grouped_data.isel(ages_bins=i).where(da_PR_mod>=x).sum().values
-#                 df_out.loc[age_ranges[i],f'n_atleast_{x}'] = float(n_people_at_least_x)
-
-#                 # proportion of people living through at least x heatwaves
-#                 prop_at_least_x = n_people_at_least_x / grouped_data.isel(ages_bins=i).sum().values
-#                 df_out.loc[age_ranges[i],f'prop_atleast_{x}'] = prop_at_least_x
-        
-#         # convert to dataarray
-#         da = xr.DataArray(df_out, dims = ('age_ranges', 'features')).assign_coords(model=GCM) # rename features to something else??
-        
-#         # concat for all GCMs
-#         if da_master is None:
-#             da_master = da.copy()
-#         else:
-#             da_master = xr.concat([da_master, da], dim='model')
-    
-#     da_n_people = da_master.isel(features=slice(0, len(da_master.features) //2))
-#     da_n_people.name = 'number of people'
-#     da_prop_people = da_master.isel(features=slice(len(da_master.features) //2, len(da_master.features))) 
-#     da_prop_people.name = 'proportion'
-        
-#     return da_n_people, da_prop_people
 
 
 
@@ -1842,7 +1618,7 @@ def calc_percapita_hotdays_peopledays_1yr(gs_population,
                                            ages_values=range(0,100),
                                            grouped = True,
                                            size_win = 10,
-                                          # mask_where_decr=False #should be called mask less than zero
+                                          mask_where_decr=False #should be called mask less than zero
                                            ):
     ''' calculate for each age year if grouped = False. if grouped = True then you have to specify size win (standard 18) and it will group data for 0-17... 
     - make sure to edit indexing if you change columns created in this funciton (e.g. get rid of n whrincr and prop whr incr which i think are kind of useless?)
@@ -1862,25 +1638,25 @@ def calc_percapita_hotdays_peopledays_1yr(gs_population,
 
         for i in range(len(df_out)):
             
-            # #TODO: make flag without masking where da_nAHD>0 - CHECK THIS !!!
+            #TODO: make flag without masking where da_nAHD>0 - CHECK THIS !!!
             
-            # if mask_where_decr == True: # only places where there is an increase, not where decrease, test sensitivity to this! 
-            #     # people times days
-            #     people_times_hotdays = (gs_population.isel(ages=i).where(da_nAHD>0) * da_nAHD).sum().values
-            #     df_out.loc[i,f'people_days'] = people_times_hotdays
+            if mask_where_decr == True: # only places where there is an increase, not where decrease, test sensitivity to this! 
+                # people times days
+                people_times_hotdays = (gs_population.isel(ages=i).where(da_nAHD>0) * da_nAHD).sum().values
+                df_out.loc[i,f'people_days'] = people_times_hotdays
 
-            #     # global avg days per capita 
-            #     per_capita_days = people_times_hotdays / gs_population.isel(ages=i).where(da_nAHD>0).sum().values
-            #     df_out.loc[i,f'per_capita_days'] = per_capita_days
+                # global avg days per capita 
+                per_capita_days = people_times_hotdays / gs_population.isel(ages=i).where(da_nAHD>0).sum().values
+                df_out.loc[i,f'per_capita_days'] = per_capita_days
             
-            # if mask_where_decr == False:
-            # people times days
-            people_times_hotdays = (gs_population.isel(ages=i) * da_nAHD).sum().values
-            df_out.loc[i,f'people_days'] = people_times_hotdays
-        
-            # global avg days per capita 
-            per_capita_days = people_times_hotdays / gs_population.isel(ages=i).sum().values
-            df_out.loc[i,f'per_capita_days'] = per_capita_days
+            elif mask_where_decr == False:
+                # people times days
+                people_times_hotdays = (gs_population.isel(ages=i) * da_nAHD).sum().values
+                df_out.loc[i,f'people_days'] = people_times_hotdays
+
+                # global avg days per capita 
+                per_capita_days = people_times_hotdays / gs_population.isel(ages=i).sum().values
+                df_out.loc[i,f'per_capita_days'] = per_capita_days
             
             # total people of each age 
             n_people = gs_population.isel(ages=i).sum().values
@@ -1985,130 +1761,3 @@ def calc_averagedeltaI_peragegroup(gs_population,
 
 
 
-
-# def calc_averagePR_peragegroup(gs_population, 
-#                                    GCMs, 
-#                                    da_PR_all, 
-#                                    ages_values=range(0,100),
-#                                    grouped = True,
-#                                    size_win = 10
-#                                    ):
-#     # initiate empty dataarray 
-#     da_master = None
-
-#     for GCM in GCMs:
-
-#         da = da_PR_all.sel(model=GCM)
-
-#         # initiate empty data array
-#         df_out = pd.DataFrame(index=ages_values)
-#         df_out['avg_PR'] = np.nan
-#         df_out['n_people'] = np.nan
-
-#         for i in range(len(df_out)):
-
-#             # population weighted average of deltaI, by cohort weight
-#             pop_weighted_avg = (da * gs_population.isel(ages=i) ).sum(
-#                 dim=('lat','lon')) / gs_population.isel(ages=i).sum(dim=('lat','lon'))
-
-#             df_out.loc[i,f'avg_PR'] = pop_weighted_avg
-
-#             # total people of each age 
-#             n_people = gs_population.isel(ages=i).sum().values
-#             df_out.loc[i,f'n_people'] = n_people
-
-#             # convert to dataarray
-#             if grouped == False:
-#                 da = xr.DataArray(df_out, dims = ('age_ranges', 'features')).assign_coords(model=GCM)
-
-#         if grouped == True:
-#             # group by doing a weighted sum - maybe there's too much pre-aggregation and I should do this at gridscale not in this fxn on dataframe... 
-#             age_ranges = [i * size_win for i in range(df_out.index[-1] // size_win + 1)]
-#             df_out_weighted = df_out['avg_PR'].multiply(df_out['n_people'], axis = 0) # weighted average: per capita x number of people of each age group
-#             sum_percapita_times_people = df_out_weighted.groupby(by= ((df_out_weighted.index // size_win) + 1)).sum()
-#             sum_people_bracket = df_out['n_people'].groupby(by= ((df_out.index // size_win) + 1)).sum() # could add this as a column !!!
-#             data_grouped = sum_percapita_times_people.divide(sum_people_bracket, axis = 0).rename('avg_PR')
-#             df_out_grouped = pd.concat([data_grouped, sum_people_bracket], axis=1 ) #.reindex(age_ranges)
-#             df_out_grouped.index = age_ranges
-            
-#             # convert to dataarray
-#             da_out = xr.DataArray(df_out_grouped, dims = ('age_ranges', 'features')).assign_coords(model=GCM)
-
-
-#             # concat for all GCMs
-#             if da_master is None:
-#                 da_master = da_out.copy()
-#             else:
-#                 da_master = xr.concat([da_master, da_out], dim='model')
-
-#     return da_master
-
-
-
-
-
-
-"""
-# ===============================
-# OLD FUNCTION: CHECK WHY I GET DIFFERENT RESULTS with this and fxn above 
-# ===============================
-"""
-
-def calculate_attr_hw_adults_children(GCMs, gs_n_children, gs_n_adults): # list, da, da - maybe rename ? 
-    ''' old function! check why i get different results with newer function & get rid of this !! 
-    From: attr-hw-isimip3b-TX99-exposure-dev0.ipynb'''
-    
-    cols = ['tot_n_hw','child_hw', 'child_hw_decr', 'child_whr_increase', 'child_whr_decrease', 'child_hw_pc',
-                                     'adult_hw', 'adult_hw_decr', 'adult_whr_increase', 'adult_whr_decrease', 'adult_hw_pc']
-    
-    df = pd.DataFrame(columns=cols)
-    
-    for GCM in GCMs:
-    
-        datadir = f'/data/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/output_sep23-8523898/TX99/ISIMIP3b/{GCM}'
-
-        # calculate number of attributable events at present-day warming level 
-        p_pi = 1-0.99 # probability of ocurrence in pre-industrial 
-        data_pi_99 = xr.open_dataarray( glob.glob(os.path.join(datadir,  '{}*1850_1900.nc'.format(GCM.lower())) )[0], engine='netcdf4') # not necessary here, delete?
-        percentiles_pres_da = xr.open_dataarray(glob.glob(os.path.join(datadir, '{}*percentiles_pres_piTX99*.nc'.format(GCM.lower())))[0])
-        p_pd = 1-percentiles_pres_da # probability of occurrence in the present-day
-
-        # number of attributable events (days) = ndays * (p_pd - p_pi)    
-        n_attr_2020 = 365 * (p_pd - p_pi)
-        total_n_attr = n_attr_2020.where(n_attr_2020>0).sum().values
-
-        # combine with demographics
-        # people x events
-        children_hw_2020 = gs_n_children * n_attr_2020
-
-        # adults, 40-58 yo 
-        adults_hw_2020 = gs_n_adults * n_attr_2020
-
-        # information children
-        children_times_heatwaves = children_hw_2020.where(children_hw_2020>0).sum().values
-        children_times_heatwaves_decrease = children_hw_2020.where(children_hw_2020<0).sum().values
-        children_where_attr_hw = gs_n_children.where(n_attr_2020>0).sum().values
-        children_where_attr_hw_decrease = gs_n_children.where(n_attr_2020<0).sum().values
-        children_per_capita_hw = children_hw_2020.where(children_hw_2020>0).sum().values / gs_n_children.where(n_attr_2020>0).sum().values
-
-        # information adults
-        adults_times_heatwaves = adults_hw_2020.where(adults_hw_2020>0).sum().values
-        adults_times_heatwaves_decrease = adults_hw_2020.where(adults_hw_2020<0).sum().values
-        adults_where_attr_hw = gs_n_adults.where(n_attr_2020>0).sum().values
-        adults_where_attr_hw_decrease =gs_n_adults.where(n_attr_2020<0).sum().values
-        adults_per_capita_hw =adults_hw_2020.where(adults_hw_2020>0).sum().values / gs_n_adults.where(n_attr_2020>0).sum().values
-
-        # put all in a df
-        data = [[ float(ele) for ele in [total_n_attr, children_times_heatwaves,children_times_heatwaves_decrease, children_where_attr_hw, 
-                children_where_attr_hw_decrease, children_per_capita_hw,
-                adults_times_heatwaves, adults_times_heatwaves_decrease, adults_where_attr_hw, adults_where_attr_hw_decrease, adults_per_capita_hw ]]]
-
-        df_mod = pd.DataFrame(data=data, columns=cols)
-
-        # concat all the model dfs
-        df = pd.concat([df, df_mod], axis=0, ignore_index=True)
-    
-    df.insert(loc=0, column='model', value=GCMs)
-    df = df.set_index('model')
-    
-    return df

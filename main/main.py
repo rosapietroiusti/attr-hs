@@ -67,19 +67,9 @@ from datetime import timedelta, datetime
 from settings import *
 from functions import *
 
-
-# maybe I only need these in functions??? TRY
-
-# heat stress package from Schwingshackl, 2021 (modified UTCI code - NOT USED UTCI IN THE END??)
-sys.path.append('../CDS_heat_stress_indicators/')
-import calc_heat_stress_indicators as hsi
-
-# dist_cov package from Hauser, 2017 (modified distributions.py to add non-stationary scale paramenter) 
-sys.path.append('../dist_cov/dist_cov/')
-import distributions_dev as distributions
-import utils as utils 
-
-
+# for wbgt calc and empirical pctls
+#dask.config.set(scheduler='processes')
+#print('scheduler is processes')
 
 
 # ======================
@@ -93,14 +83,15 @@ flags_run = {}
 
 flags_run['save'] = True
 
-flags_run['hist'] = True # runs on hist+ssp370 
+flags_run['hist'] = False # hist+projections
 
 flags_run['hist-nat'] = False    # del this later when i clean up (after review) 
 
 flags_run['calc-wbgt'] = False   # calculate the WBGT and save output in SCRATCH. 
-                                 # TODO: extend to additional hist models 
 
 flags_run['run-pi'] = False # if you already have it saved, dont re-run it
+
+
 
 
 # ======================
@@ -110,14 +101,24 @@ flags_run['run-pi'] = False # if you already have it saved, dont re-run it
 
 
 if __name__ == '__main__':
-
     
-    
-    # set up dask client
     from dask.distributed import Client
-    client = Client() #threads_per_worker=1
-    print(datetime.now(), f'client initiated \n')
 
+    # shift fit  
+    client = Client() 
+
+    # emp pctl
+    # memory_limit = '200GB'  
+    #client = Client(n_workers=1, threads_per_worker=1, memory_limit=memory_limit)
+
+    # calculate WBGT
+    # memory_limit = '200GB'  
+    # client = Client(n_workers=2, threads_per_worker=1, memory_limit=memory_limit)
+    
+    
+    print(datetime.now(), f'client initiated \n')
+    print(client)
+    
     start_message()
     
     
@@ -134,13 +135,14 @@ if __name__ == '__main__':
 
         
         # loop over models
-        for GCM in [GCMs[int(sys.argv[2])]]:   
+        for GCM in [GCMs[idx_models]]:   #  int(sys.argv[2]) replace with idx_models
             print(datetime.now(), GCM)
             tic = time.time()
             
             
             # make/get path for saving output
-            outdir = make_outdir(GCM, makedirs=True)
+            if not flags_run['calc-wbgt']: 
+                outdir = make_outdir(GCM, makedirs=True)
                      
                 
                 
@@ -149,7 +151,7 @@ if __name__ == '__main__':
             # ======================
             
             if flags_run['hist'] == True: 
-                print('running analysis for historical+ssp370 models')
+                print('running analysis for historical (+ssp370)')
                 
                 
                 
@@ -160,21 +162,16 @@ if __name__ == '__main__':
                 # ======================
 
                 if flags_run['calc-wbgt'] == True: 
-                    
-                    # calculates wbgt for each file (10 years) 
-                    # from tasmax, huss and ps and saves at daily resolution
-                    calc_wbgt(GCM, 
-                              scenario1='historical', 
-                              scenario2='ssp370', 
-                              chunk_version=flags['chunk_version'], 
-                              variables=VARs,
-                              startyear=None, # Not implemented. Does all years it finds in dir. 
-                              endyear=None,  
-                              save=True, # Note. saves in scratch all as 'historical' but actually its historical-ssp370
-                              overwrite=False,
-                              outdirname='output_sep24'
-                    )
-                    
+    
+
+                    calc_wbgt_newt(GCM, 
+                                    scenario1=flags['experiment'], 
+                                    scenario2=None,  
+                                    variables=VARs,
+                                    save=True,
+                                    overwrite=False,
+                                    outdirname='output_jan25')
+                                        
 
  
 
@@ -439,7 +436,7 @@ if __name__ == '__main__':
         print('running analysis for ISIMIP3a observations')
 
         # loop over observational datasets
-        for dataset in [datasets[int(sys.argv[2])]]:  
+        for dataset in [datasets[idx_models]]:  # int(sys.argv[2]) replaced with idx_models
             print(datetime.now(), dataset)
             tic = time.time()
 
@@ -451,18 +448,14 @@ if __name__ == '__main__':
             if flags_run['calc-wbgt'] == True: 
                 
 
-                # calculates wbgt for each file (10 years) of tasmax, huss and ps 
-                # and saves at daily resolution
-                calc_wbgt(dataset,
-                         scenario1=flags['experiment'],  #obsclim or counterclim
-                          scenario2=None, 
-                          chunk_version=flags['chunk_version'], 
-                          variables=VARs,
-                          startyear=None, # Not implemented. does all years 1850-2100
-                          endyear=None, 
-                          save=True,     # saves in SCRATCH, makes the dir by itself 
-                          overwrite=False,
-                          outdirname='output_apr24-9139513')
+
+                calc_wbgt_newt(dataset, 
+                                    scenario1=flags['experiment'], 
+                                    scenario2=None,  
+                                    variables=VARs,
+                                    save=True,
+                                    overwrite=False,
+                                    outdirname='output_jan25')
                  
 
 
@@ -494,6 +487,7 @@ if __name__ == '__main__':
                                     variable=var,
                                     startyear=flags['shift_period'][0],
                                     endyear=flags['shift_period'][1],  
+                                     engine='h5netcdf' # testing this for HDF error thing! 
                                    ) 
                 
                 # open and smooth covariate (GMST)
@@ -503,30 +497,27 @@ if __name__ == '__main__':
                 df_cov_smo = pd.DataFrame(apply_lowess(df_cov, df_cov.index, ntime=4))
                 
    
-                print('by month, only loc')
-#                 da_params = norm_shift_fit_boot(da, 
-#                                                 df_cov_smo, 
-#                                                 shift_sigma=flags['shift_sigma'], 
-#                                                 by_month=True, 
-#                                                 bootsize=1, 
-#                                                 alpha=0.05, 
-#                                                 seed=0, 
-#                                                 incl_mle=True) # delete this ! 
 
-                # output log-likelihood of model for CI calculation and goodness of fit 
+                print(f'shift fit by month')
+                
+                # output log-likelihood of model for CI calculation and goodness of fit (developing)
                 if not flags['shift_loglike']:
                     da_params = norm_shift_fit(da,
                                                df_cov_smo, 
                                                shift_sigma=flags['shift_sigma'], 
                                                by_month=True)
-                    ext = metric+'_params_shift_loc_mon'
+                    if not flags['shift_sigma']:
+                        ext = metric+'_params_shift_loc_mon'
+                    else:
+                        ext = metric+'_params_shift_loc_sigma_mon' 
+                    
                 else:
                     da_params = norm_shift_fit_loglike(da,
                                                df_cov_smo, 
                                                shift_sigma=flags['shift_sigma'], 
                                                by_month=True)                
         
-                    ext = metric+'_params_shift_loc_mon_loglike' # clean up old names !! 
+                    ext = metric+'_params_shift_loc_mon_loglike' 
         
                 if flags_run['save'] == True:
                     

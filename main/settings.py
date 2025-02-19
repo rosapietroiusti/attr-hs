@@ -9,6 +9,17 @@ Update Sep 2024
 import os, glob, sys
 import numpy
 
+# Testing this instead of having two different scripts (_ana and not) 
+if sys.argv[1] == '-f':
+    idx_models = 0 
+    idx_settings = 0
+else:
+    idx_models = int(sys.argv[2]) 
+    idx_settings = int(sys.argv[3])     
+                        # sys.argv[1] : version (jobid or '-f' which then gets saved as _moyr)
+                        # sys.argv[2]: indexing GCMs/datasets (in main.py) for job array
+                        # sys.argv[3]: indexing time window or other settings (here, in settings.py) for job array
+
 
 # edit here
 # --------------------------------------------------
@@ -25,18 +36,18 @@ scratchdirs = os.path.join(os.environ['VSC_SCRATCH_VO_USER'],'attr-hw','output')
 
 flags = {}
 
-flags['models'] = 'ISIMIP3b'
+flags['models'] = 'ISIMIP3a'
                              # 'ISIMIP3b'
                              # 'ISIMIP3a' 
     
 
-flags['experiment'] = None #'obsclim' # 
+flags['experiment'] = 'obsclim' 
                                 # obsclim
-                                # counterclim
-                                # None if ISIMIP3b
+                                # historical
+                                # ssp370, LATER: counterclim, other ssps ssp126, ssp585 (for WBGT calculate)
 
 
-flags['metric'] = 'WBGT' # ['WBGT28', 'WBGT30', 'WBGT33'][int(sys.argv[3])]  
+flags['metric'] = 'WBGT' #['WBGT28', 'WBGT30', 'WBGT33'][idx_settings]  
                             # submit as job array e.g. ['WBGT90', 'WBGT95', 'WBGT99'][int(sys.argv[3])]
                             # 'WBGT' : to calculate it or run shift_fit on full distribution
                             # TX: to run shift fit 
@@ -55,18 +66,18 @@ flags['time_method']=  None
                             # 'single-year' analysis on just one year or temperature level (target year in obs models are matched to!)
                             # None: if running shift fit of WBGT-calc
                 
-flags['shift_sigma'] = False 
+flags['shift_sigma'] = True
                             # True = one model per month, loc and scale both vary
                             # False = one model per month, only loc varies
                             # None: if not running shift fit 
 
-flags['shift_period'] = [(1901, 2019),(1950, 2019)][int(sys.argv[3])]  # [(1901, 2019),(1950, 2019)][int(sys.argv[3])] #[(1901, 2019),(1950, 2019)][int(sys.argv[2])-1]
+flags['shift_period'] = [(1901, 2019),(1950, 2019)][idx_settings]
                              # 1901, 2019
                              # 1950, 2019 
                              # None for emp percentiles or calc wbgt 
 
 flags['shift_loglike']=None 
-                            # True / False : run the shift fit with this on true !!! for CIs !! 
+                            # True / False : run the shift fit with this on true !!! for CIs !! TODO: del this, not implemented
 
             
 flags['chunk_version']=0     
@@ -76,21 +87,22 @@ flags['chunk_version']=0
                             # all of them unchunk time 
                             # test time they take on shift fit! 
             
-target_years = None #2023 #[2022,2023][int(sys.argv[3])]  
+target_years = None 
+                #[2022,2023][int(sys.argv[3])]  
                 # int e.g. 2022, 2023 - for empirical percentiles and fixed magnitude
                 # None: to calc WBGT or shift fit or target temp
 
 target_temperature = None
-                        #1.5, 2, 2.5 ... 
+                        #1.5, 2 ... other GW levels would also work 
 
         
-warming_period_method = None 
+warming_period_method = None
                             # window, centered (for 1.5 warming)
                             # ar6 (for matching to obs years)
                             # None if not matching target temperature
-warming_period_match = None 
-                            # 'closest'
-                            # 'crossed' 
+warming_period_match = None
+                            # 'closest' : for present-day
+                            # 'crossed' : for warming levels
                             # None if not matching target temperature
                             
         
@@ -110,18 +122,18 @@ observed_warming_path = os.path.join(datadir, 'gmst', 'gmst-obs/forster2024/deca
 observed_warming_path_annual = os.path.join(datadir, 'gmst', 'gmst-obs/forster2024/annual_averages.csv') #OLD: gmst-obs/forster2023/decadal_averages.csv
 
 # For saving with job submission 
-ver = sys.argv[1]
+#ver = sys.argv[1]
 
+#trynew
+job_id = os.getenv("SLURM_JOB_ID")  # This gives the job ID
+task_id = os.getenv("SLURM_ARRAY_TASK_ID")  # This gives the task ID within the array
+ver = f"{job_id}_{task_id}" if task_id else job_id
 
 #ISIMIP3b models 
 
 indir_p = os.path.join(os.environ['VSC_DATA_VO'], 'data/dataset/ISIMIP/ISIMIP3b/InputData/climate/atmosphere/bias-adjusted/global/daily/') # here there is historical of the primary models
 indir_s = os.path.join(os.environ['VSC_DATA_VO'], 'data/dataset/ISIMIP/ISIMIP3b/SecondaryInputData/climate/atmosphere/bias-adjusted/global/daily/') # here there is historical of secondary models and hist-nat of all 6 models that have it
 
-#round 1
-#GCMs = ['CanESM5', 'CNRM-CM6-1', 'GFDL-ESM4', 'IPSL-CM6A-LR', 'MIROC6', 'MRI-ESM2-0'] # all the ISIMIP3b GCMs that have both hist and hist-nat 
-#round 2
-#GCMs = ['EC-Earth3', 'UKESM1-0-LL', 'MPI-ESM1-2-HR', 'CNRM-ESM2-1'] # the remaining 4 that dont have hist-nat
 
 GCMs = ['CanESM5', 'CNRM-CM6-1', 'GFDL-ESM4', 'IPSL-CM6A-LR', 'MIROC6', 'MRI-ESM2-0','EC-Earth3', 'UKESM1-0-LL', 'MPI-ESM1-2-HR', 'CNRM-ESM2-1'] # all 10 
 GCMs_p = ['GFDL-ESM4', 'IPSL-CM6A-LR', 'MPI-ESM1-2-HR', 'MRI-ESM2-0', 'UKESM1-0-LL']

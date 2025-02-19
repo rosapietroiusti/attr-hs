@@ -41,19 +41,19 @@ module load CDO/2.2.2-gompi-2023a
 
 
 # set datasets to loop over
-datasets=('empty' 'GSWP3-W5E5' '20CRv3-W5E5' '20CRv3-ERA5' )  #'20CRv3' only goes to 2015 dont do it 
+datasets=('empty' 'GSWP3-W5E5' '20CRv3-W5E5' '20CRv3-ERA5' )  
 
 # variable
 var='WBGT'
 
-period='present'
+period='pre-industrial'
 
-experiment='counterclim'
+experiment='obsclim'
 
 
 # set indir / outdir 
-inDIRs=${VSC_SCRATCH_VO_USER}/attr-hw/output/output_apr24-9139513/WBGT/ISIMIP3a/${experiment}
-outDIRs=${VSC_SCRATCH_VO_USER}/attr-hw/output/output_apr24-9139513/WBGT/ISIMIP3a/${experiment}/preprocessed
+inDIRs=${VSC_SCRATCH_VO_USER}/attr-hw/output/output_jan25/WBGT/ISIMIP3a/${experiment}
+outDIRs=${VSC_SCRATCH_VO_USER}/attr-hw/output/output_jan25/WBGT/ISIMIP3a/${experiment}/preprocessed
 
 
 
