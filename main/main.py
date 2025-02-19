@@ -162,20 +162,7 @@ if __name__ == '__main__':
                 # ======================
 
                 if flags_run['calc-wbgt'] == True: 
-                    
-                    # # calculates wbgt for each file (10 years) 
-                    # # from tasmax, huss and ps and saves at daily resolution
-                    # calc_wbgt(GCM, 
-                    #           scenario1='historical', 
-                    #           scenario2='ssp370', 
-                    #           chunk_version=flags['chunk_version'], 
-                    #           variables=VARs,
-                    #           #startyear=None, # Not implemented. Does all years it finds in dir. 
-                    #           #endyear=None,  
-                    #           save=True, # Note. saves in scratch all as 'historical' but actually its historical-ssp370
-                    #           overwrite=False,
-                    #           outdirname='output_sep24' # change this?
-                    # )
+    
 
                     calc_wbgt_newt(GCM, 
                                     scenario1=flags['experiment'], 
@@ -460,19 +447,6 @@ if __name__ == '__main__':
             
             if flags_run['calc-wbgt'] == True: 
                 
-
-                # calculates wbgt for each file (10 years) of tasmax, huss and ps 
-                # and saves at daily resolution
-                # calc_wbgt(dataset,
-                #          scenario1=flags['experiment'],  #obsclim or counterclim
-                #           scenario2=None, 
-                #           chunk_version=flags['chunk_version'], 
-                #           variables=VARs,
-                #           startyear=None, # Not implemented. does all years 1850-2100
-                #           endyear=None, 
-                #           save=True,     # saves in SCRATCH, makes the dir by itself 
-                #           overwrite=False,
-                #           outdirname='output_apr24-9139513')
 
 
                 calc_wbgt_newt(dataset, 
