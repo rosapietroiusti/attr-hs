@@ -1,8 +1,9 @@
 # Children disproportionately exposed to attributable heat stress days
 
-Work in progress (Pietroiusti et al. in prep). 
-
 Calculate gridscale attributable heat stress days and assess whether there is a disproportionate burden on children vs. adults, based on GCMs and reanalysis. 
+
+(Pietroiusti et al., submitted)
+
 
 ## Additional necessary code:
 
