@@ -41,7 +41,7 @@ flags['models'] = 'ISIMIP3a'
                              # 'ISIMIP3a' 
     
 
-flags['experiment'] = 'obsclim' 
+flags['experiment'] = ['obsclim','counterclim'][idx_settings]
                                 # obsclim
                                 # historical
                                 # ssp370, LATER: counterclim, other ssps ssp126, ssp585 (for WBGT calculate)
@@ -56,7 +56,7 @@ flags['metric'] = 'WBGT' #['WBGT28', 'WBGT30', 'WBGT33'][idx_settings]
                             # 'WBGT28', 'WBGT30', 'WBGT33'
 
                             
-flags['method'] = 'shift_fit'   
+flags['method'] = 'calculate'   
                             # calculate: to calculate WBGT 
                             # empirical_percentile: calculates return levels and periods with empirical percentiles
                             # fixed_threshold: empirical percentiles but based on a fixed magnitude threshold   - TODO:make this the same flag!! have it automatically recognized based on metric 
@@ -66,14 +66,15 @@ flags['time_method']=  None
                             # 'single-year' analysis on just one year or temperature level (target year in obs models are matched to!)
                             # None: if running shift fit of WBGT-calc
                 
-flags['shift_sigma'] = True
+flags['shift_sigma'] = None
                             # True = one model per month, loc and scale both vary
                             # False = one model per month, only loc varies
                             # None: if not running shift fit 
 
-flags['shift_period'] = [(1901, 2019),(1950, 2019)][idx_settings]
+flags['shift_period'] = None
                              # 1901, 2019
                              # 1950, 2019 
+                            # [(1901, 2019),(1950, 2019)][idx_settings]
                              # None for emp percentiles or calc wbgt 
 
 flags['shift_loglike']=None 
@@ -88,7 +89,7 @@ flags['chunk_version']=0
                             # test time they take on shift fit! 
             
 target_years = None 
-                #[2022,2023][int(sys.argv[3])]  
+                #[2022,2023][idx_settings]  
                 # int e.g. 2022, 2023 - for empirical percentiles and fixed magnitude
                 # None: to calc WBGT or shift fit or target temp
 
@@ -156,7 +157,7 @@ indir_obs =  os.path.join(os.environ['VSC_DATA_VO'],'data/dataset/ISIMIP/ISIMIP3
 
 indir_counterclim =  os.path.join(os.environ['VSC_DATA_VO'],'data/dataset/ISIMIP/ISIMIP3a/InputData/climate/atmosphere/counterclim/global/daily/historical/')
 
-datasets = ['GSWP3-W5E5','20CRv3-ERA5','20CRv3-W5E5'] #1901-2019, 1901-2021, 1901-2019 + '20CRv3' 1901-2015
+datasets = ['GSWP3-W5E5','20CRv3-ERA5','20CRv3-W5E5','20CRv3'] #1901-2019, 1901-2021, 1901-2019 + '20CRv3' 1901-2015
 
 
 
