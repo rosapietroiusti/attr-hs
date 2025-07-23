@@ -87,7 +87,7 @@ flags_run['hist'] = False # hist+projections
 
 flags_run['hist-nat'] = False    # del this later when i clean up (after review) 
 
-flags_run['calc-wbgt'] = False   # calculate the WBGT and save output in SCRATCH. 
+flags_run['calc-wbgt'] = True   # calculate the WBGT and save output in SCRATCH. 
 
 flags_run['run-pi'] = False # if you already have it saved, dont re-run it
 
@@ -105,15 +105,15 @@ if __name__ == '__main__':
     from dask.distributed import Client
 
     # shift fit  
-    client = Client() 
+    #client = Client() 
 
     # emp pctl
     # memory_limit = '200GB'  
     #client = Client(n_workers=1, threads_per_worker=1, memory_limit=memory_limit)
 
     # calculate WBGT
-    # memory_limit = '200GB'  
-    # client = Client(n_workers=2, threads_per_worker=1, memory_limit=memory_limit)
+    memory_limit = '200GB'  
+    client = Client(n_workers=2, threads_per_worker=1, memory_limit=memory_limit)
     
     
     print(datetime.now(), f'client initiated \n')

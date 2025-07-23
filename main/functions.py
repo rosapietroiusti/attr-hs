@@ -30,6 +30,7 @@ from utils import *
 
 # NEWT Tw calculation (Warren, Rogers et al., https://github.com/robwarrenwx/atmos)
 sys.path.append('../atmos/')
+#import atmos 
 from atmos import thermo
 
 # dist_cov (M. Hauser et al., https://github.com/mathause/dist_cov)
@@ -624,15 +625,15 @@ def calc_wbgt_newt(GCM,
     
             # open variables 
             tasmax,huss,ps= [xr.open_dataarray(files[i], engine="h5netcdf").chunk({"lat": lat_chunk, "lon": lon_chunk }).astype(float) for files in filepaths]
-
-            # "time": 30,
-            # .chunk({"lat": lat_chunk, "lon": lon_chunk })
             
             # check units
-            if not (tasmax.attrs['units'] == 'K' and 
-                    huss.attrs['units'] == 'kg kg-1' and 
-                    ps.attrs['units'] == 'Pa'):
-                raise ValueError("Units are incorrect")
+            try:
+                if not (tasmax.attrs['units'] == 'K' and 
+                        huss.attrs['units'] == 'kg kg-1' and 
+                        ps.attrs['units'] == 'Pa'):
+                    raise ValueError("Units are incorrect")
+            except:
+                print('Units of tasmax, huss, ps not specified in input data.')
             
             # calculate wet bulb temperature (K) 
             Tw = da.map_blocks(calc_wet_bulb, ps, tasmax, huss, dtype=float)
@@ -684,7 +685,7 @@ def compute_quantile(da, quantile):
     da_out = da.quantile(
                 q=quantile,
                 dim='time',
-                method='inverted_cdf', # check this is best !!! see differnce if using “closest_observation” which should be equivalent to cdo nrank? 
+                method='inverted_cdf', # check this is best 
             )
     
     if 'target_year' in da.attrs:
