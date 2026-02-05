@@ -10,12 +10,14 @@ import os, glob, sys
 import numpy
 
 # Testing this instead of having two different scripts (_ana and not) 
-if sys.argv[1] == '-f':
+arg = sys.argv[1]
+if arg.startswith(('-f', '--f')):
     idx_models = 0 
     idx_settings = 0
 else:
     idx_models = int(sys.argv[2]) 
     idx_settings = int(sys.argv[3])     
+    
                         # sys.argv[1] : version (jobid or '-f' which then gets saved as _moyr)
                         # sys.argv[2]: indexing GCMs/datasets (in main.py) for job array
                         # sys.argv[3]: indexing time window or other settings (here, in settings.py) for job array
