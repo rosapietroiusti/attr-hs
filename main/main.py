@@ -92,6 +92,11 @@ flags_run['calc-wbgt'] = True   # calculate the WBGT and save output in SCRATCH.
 flags_run['run-pi'] = False # if you already have it saved, dont re-run it
 
 
+# ======================
+# Get arguments from job submission
+# ======================
+
+
 
 
 # ======================

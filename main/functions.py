@@ -29,12 +29,11 @@ from settings import *
 from utils import * 
 
 # NEWT Tw calculation (Warren, Rogers et al., https://github.com/robwarrenwx/atmos)
-sys.path.append('../atmos/')
-#import atmos 
+sys.path.append('/vscmnt/brussel_pixiu_data/_data_brussel/vo/000/bvo00012/vsc10419/attr-hw/attr-hw-scripts/atmos/')
 from atmos import thermo
 
 # dist_cov (M. Hauser et al., https://github.com/mathause/dist_cov)
-sys.path.append('../dist_cov/dist_cov/')
+sys.path.append('/vscmnt/brussel_pixiu_data/_data_brussel/vo/000/bvo00012/vsc10419/attr-hw/attr-hw-scripts/dist_cov/dist_cov/')
 import distributions as distributions 
 import utils as utils 
 
