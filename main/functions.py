@@ -29,12 +29,11 @@ from settings import *
 from utils import * 
 
 # NEWT Tw calculation (Warren, Rogers et al., https://github.com/robwarrenwx/atmos)
-sys.path.append('../atmos/')
-#import atmos 
+sys.path.append('/vscmnt/brussel_pixiu_data/_data_brussel/vo/000/bvo00012/vsc10419/attr-hw/attr-hw-scripts/atmos/')
 from atmos import thermo
 
 # dist_cov (M. Hauser et al., https://github.com/mathause/dist_cov)
-sys.path.append('../dist_cov/dist_cov/')
+sys.path.append('/vscmnt/brussel_pixiu_data/_data_brussel/vo/000/bvo00012/vsc10419/attr-hw/attr-hw-scripts/dist_cov/dist_cov/')
 import distributions as distributions 
 import utils as utils 
 
@@ -1277,7 +1276,7 @@ def open_all_p0_p1(GCMs, metric, outdirname,year_pres=None, temp_target=None):
 def open_all_wbgt_summary(GCMs,
                             metric,
                             open_what,
-                            outdirname,
+                            outdirpath,
                             experiment=None,
                             period='present',
                             observations=True,
@@ -1303,18 +1302,22 @@ def open_all_wbgt_summary(GCMs,
             
     if observations==False:
         ext=f'{2019}_{nyrs}yr_{open_what}'
+    
+    print(ext)
         
     
     for GCM in GCMs:
         
         if experiment is not None:
-             filepath=glob.glob(os.path.join('/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/',
-                                        outdirname, f'WBGT/ISIMIP*/{experiment}/preprocessed/',GCM,
-                                        f'*_{ext}*'))[0]
+             path=glob.glob(os.path.join(
+                                        outdirpath, f'WBGT/ISIMIP*/{experiment}/preprocessed/',GCM,
+                                        f'*_{ext}*'))
         else:
-            filepath=glob.glob(os.path.join('/scratch/brussel/vo/000/bvo00012/vsc10419/attr-hw/output/',
-                                        outdirname, 'WBGT/ISIMIP*/preprocessed/',GCM,
-                                        f'*_{ext}*'))[0]
+            path=glob.glob(os.path.join(
+                                        outdirpath, 'WBGT/ISIMIP*/preprocessed/',GCM,
+                                        f'*_{ext}*'))
+        print(path)
+        filepath=path[0]
 
         try:
             da = xr.open_dataset(filepath)['wbgt']

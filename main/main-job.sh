@@ -155,7 +155,7 @@ indx=( 3 0 1 2 3 ) # dataset
 indy=( 0 1 1 1 1 ) # obsclim/counterclim
 
 echo ${indx[$arr]} ${indy[$arr]}
-python -u main.py "$ver" ${indx[$arr]} ${indy[$arr]}  # replace w/ python -u for real-time output in .out file
+python -u main.py "$ver" --model_id ${indx[$arr]} --settings_id ${indy[$arr]}  # replace w/ python -u for real-time output in .out file
 
 
 
