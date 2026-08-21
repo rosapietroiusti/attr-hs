@@ -1,8 +1,14 @@
-# Children disproportionately exposed to attributable heat stress days
+# Age-specific exposure to human-induced increases in humid heat
 
-Calculate gridscale attributable heat stress days and assess whether there is a disproportionate burden on children vs. adults, based on GCMs and reanalysis. 
+This code is used to estimate gridscale attributable heat stress days from an ensemble of GCMs and reanalysis, and assess whether there is a disproportionate burden on different age groups.
 
-(Pietroiusti et al., submitted)
+### Code underlying the analysis in:
+
+Pietroiusti et al. (2026) Age-specific exposure to human-induced increases in humid heat, *Science Advances* (in press). 
+
+### Frozen code release: 
+
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.18837615-blue)](https://doi.org/10.5281/zenodo.18837615)
 
 
 ## How to use this code

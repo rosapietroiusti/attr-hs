@@ -1083,7 +1083,7 @@ def open_all_nAHD(GCMs, metric, outdirname,year_pres=None, temp_target=None):
         p1 = 1 - xr.open_dataarray(filepath,  decode_times=False)
         
         # calc nAHD 
-        da_nAHD = 365 * (p1 - p0)
+        da_nAHD = 365.25 * (p1 - p0) # updated this 21 Aug 2026
         da_nAHD.name = 'number of additional days'
         da_nAHD = da_nAHD.assign_coords(model=GCM)
         
