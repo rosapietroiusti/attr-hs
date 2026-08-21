@@ -7,7 +7,6 @@ Calculate gridscale attributable heat stress days and assess whether there is a 
 [![DOI](https://zenodo.org/badge/864157187.svg)](https://doi.org/10.5281/zenodo.18837615)
 
 
-
 ## How to use this code
 
 All code is in ``` main/ ```
